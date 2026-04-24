@@ -1,0 +1,119 @@
+name: Build Installers
+
+on:
+  push:
+    tags:
+      - 'v*'          # dispara em qualquer tag tipo v1.0.0, v1.1.0, etc.
+  workflow_dispatch:  # permite rodar manualmente pelo botão no GitHub
+
+jobs:
+  # ─────────────────────────────────────────
+  # BUILD WINDOWS — gera o .exe instalador
+  # ─────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build instalador Windows (.exe)
+        run: npm run dist-win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload .exe como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-windows
+          path: dist/*.exe
+          retention-days: 30
+
+  # ─────────────────────────────────────────
+  # BUILD MAC — gera o .dmg
+  # ─────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build instalador Mac (.dmg)
+        run: npm run dist-mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload .dmg como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador-mac
+          path: dist/*.dmg
+          retention-days: 30
+
+  # ─────────────────────────────────────────
+  # RELEASE — publica os arquivos no GitHub
+  # Só roda quando você cria uma tag v*
+  # ─────────────────────────────────────────
+  publish-release:
+    needs: [build-windows, build-mac]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Baixar artefatos Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: instalador-windows
+          path: ./release-files
+
+      - name: Baixar artefatos Mac
+        uses: actions/download-artifact@v4
+        with:
+          name: instalador-mac
+          path: ./release-files
+
+      - name: Criar Release no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "DJI Mapper Pro ${{ github.ref_name }}"
+          body: |
+            ## DJI Mapper Pro ${{ github.ref_name }}
+
+            ### Downloads
+            - **Windows:** `DJI Mapper Pro Setup *.exe` — instalador completo (Next → Next → Install)
+            - **Mac Intel:** `DJI Mapper Pro-*-x64.dmg`
+            - **Mac Apple Silicon:** `DJI Mapper Pro-*-arm64.dmg`
+
+            ### Instalação Windows
+            1. Baixe o `.exe`
+            2. Execute e siga o assistente de instalação
+            3. O app aparece no Menu Iniciar e na Área de Trabalho
+
+            ### Instalação Mac
+            1. Baixe o `.dmg` correspondente ao seu chip
+            2. Abra o `.dmg` e arraste o app para a pasta Aplicativos
+            3. Na primeira abertura: clique com botão direito → Abrir
+          files: ./release-files/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

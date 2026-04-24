@@ -1,0 +1,55 @@
+{
+  "name": "dji-mapper-pro",
+  "version": "1.0.0",
+  "description": "DJI Mapper Pro — Planejador de missões de drone",
+  "main": "main.js",
+  "author": "Unidrone",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist-win": "electron-builder --win --x64",
+    "dist-mac": "electron-builder --mac --x64 --arm64"
+  },
+  "build": {
+    "appId": "br.com.unidrone.dji-mapper-pro",
+    "productName": "DJI Mapper Pro",
+    "copyright": "© 2025 Unidrone",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DJI Mapper Pro",
+      "license": "LICENSE.txt",
+      "language": "1046"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    }
+  },
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
+  }
+}

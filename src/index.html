@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DJI Mapper Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --w:#fff;--bg:#f0f2f5;--sbc:#e2e6ea;--fb:#f7f8fa;--fd:#dde1e7;
+  --t:#1a202c;--t2:#5a6479;--t3:#9aa3b2;
+  --ac:#1a6fde;--ach:#1558b8;--al:#e8f0fd;--al2:#c5d8fa;
+  --ok:#16a34a;--okb:#dcfce7;--okd:#bbf7d0;
+  --err:#dc2626;--warn:#d97706;
+  --r:6px;--r2:10px;
+  --sh:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
+}
+body{font-family:'Inter',sans-serif;font-size:13.65px;background:var(--bg);color:var(--t);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+/* TOPBAR */
+#topbar{height:50px;background:var(--w);border-bottom:1px solid var(--sbc);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:1001}
+.logo-icon{width:24px;height:24px;flex-shrink:0}
+.logo-txt{font-size:14.7px;font-weight:600;color:var(--t);letter-spacing:-.3px;white-space:nowrap}.logo-txt b{color:var(--ac)}
+.tb-space{flex:1}
+.tb-btn{font-size:12.6px;font-weight:500;padding:5px 11px;border-radius:var(--r);border:1px solid var(--fd);background:var(--fb);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
+.tb-btn:hover{background:var(--w);color:var(--t);border-color:#b0b8c8}
+.tb-btn.danger{color:var(--err);border-color:#fca5a5}.tb-btn.danger:hover{background:#fef2f2}
+#menu-btn{display:none;width:36px;height:36px;border-radius:var(--r);border:1px solid var(--fd);background:var(--fb);cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0}
+#menu-btn span{display:block;width:18px;height:2px;background:var(--t2);border-radius:1px;transition:all .2s}
+#menu-btn.open span:nth-child(1){transform:rotate(45deg) translate(4px,4px)}
+#menu-btn.open span:nth-child(2){opacity:0}
+#menu-btn.open span:nth-child(3){transform:rotate(-45deg) translate(4px,-4px)}
+/* LAYOUT */
+#main{display:flex;flex:1;overflow:hidden;position:relative}
+/* SIDEBAR */
+#sidebar{width:295px;flex-shrink:0;background:var(--w);border-right:1px solid var(--sbc);display:flex;flex-direction:column;overflow:hidden;z-index:500;transition:transform .25s}
+#sb-scroll{flex:1;overflow-y:auto;padding:13px 13px 4px}
+#sb-scroll::-webkit-scrollbar{width:3px}
+#sb-scroll::-webkit-scrollbar-thumb{background:var(--fd);border-radius:99px}
+.sec{margin-bottom:13px}
+.sec-lbl{font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+/* MODE TABS */
+.mtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:12px}
+.mtab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:var(--r);border:1px solid transparent;background:transparent;cursor:pointer;font-family:inherit;color:var(--t3);font-size:10.5px;font-weight:500;transition:all .12s}
+.mtab svg{width:17px;height:17px;opacity:.45;transition:opacity .12s}
+.mtab:hover{background:var(--fb);color:var(--t2)}
+.mtab.active{background:var(--al);border-color:var(--ac);color:var(--ac)}.mtab.active svg{opacity:1}
+/* FIELDS */
+.field{margin-bottom:9px}
+.field label{font-size:11.55px;font-weight:500;color:var(--t2);display:block;margin-bottom:3px}
+.field input[type=number],.field select{width:100%;background:var(--w);border:1px solid var(--fd);border-radius:var(--r);color:var(--t);font-size:13.65px;padding:6px 9px;font-family:inherit;outline:none;transition:border-color .12s,box-shadow .12s;-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(26,111,222,.1)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* SLIDER */
+.sf{margin-bottom:9px}
+.sf-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sf-lbl{font-size:11.55px;font-weight:500;color:var(--t2)}
+.sf-val{font-size:12.6px;font-weight:600;color:var(--t);background:var(--fb);border:1px solid var(--fd);border-radius:4px;padding:1px 7px;min-width:44px;text-align:center}
+input[type=range]{width:100%;-webkit-appearance:none;height:4px;background:var(--fd);border-radius:99px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--w);border:2px solid var(--ac);box-shadow:0 1px 4px rgba(26,111,222,.25);cursor:pointer}
+/* INFO ROWS */
+.info-row{display:flex;align-items:center;justify-content:space-between;background:var(--fb);border:1px solid var(--fd);border-radius:var(--r);padding:5px 9px;margin-bottom:8px}
+.info-lbl{font-size:11.55px;font-weight:500;color:var(--t2)}
+.info-val{font-size:13.65px;font-weight:600;color:var(--ac)}
+/* DIVIDER */
+.div{height:1px;background:var(--sbc);margin:10px 0}
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.stat{background:var(--fb);border:1px solid var(--fd);border-radius:var(--r);padding:7px 9px}
+.sl{font-size:10.5px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
+.sv{font-size:13.65px;font-weight:600;color:var(--t)}.su{font-size:10.5px;font-weight:400;color:var(--t2);margin-left:1px}
+/* TOGGLES */
+.tgl-list{border:1px solid var(--fd);border-radius:var(--r);overflow:hidden;margin-bottom:8px}
+.tgl-row{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--w);border-bottom:1px solid var(--fd)}
+.tgl-row:last-child{border-bottom:none}
+.tgl-info{display:flex;flex-direction:column;gap:1px}
+.tgl-name{font-size:12.6px;font-weight:500;color:var(--t)}
+.tgl-sub{font-size:10.5px;color:var(--t3)}
+.toggle{width:34px;height:20px;background:#cbd5e1;border-radius:99px;position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0}
+.toggle.on{background:var(--ac)}
+.tgl-icon-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--fd);background:var(--fb);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t3);transition:all .12s;flex-shrink:0}
+.tgl-icon-btn:hover{background:var(--al);border-color:var(--ac);color:var(--ac)}
+.tgl-icon-btn.active{background:var(--al);border-color:var(--ac);color:var(--ac)}.toggle::after{content:'';position:absolute;width:16px;height:16px;background:var(--w);border-radius:50%;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.toggle.on::after{left:16px}
+.f2b{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.fbtn{padding:7px;border-radius:var(--r);border:1px solid var(--fd);background:var(--w);color:var(--t2);font-size:12.6px;font-weight:500;font-family:inherit;cursor:pointer;text-align:center;transition:all .12s}
+.fbtn.active{background:var(--al);border-color:var(--ac);color:var(--ac)}
+.fbtn:hover:not(.active){background:var(--fb);color:var(--t)}
+/* TERRAIN LEGEND */
+#terrain-legend{display:none;margin-bottom:8px;border:1px solid var(--fd);border-radius:var(--r);overflow:hidden}
+.legend-bar{height:14px;background:linear-gradient(to right,#3b82f6,#22c55e,#f59e0b,#ef4444)}
+.legend-labels{display:flex;justify-content:space-between;padding:3px 8px;background:var(--fb)}
+.legend-labels span{font-size:10.5px;color:var(--t2);font-weight:500}
+/* ── WAYPOINT LIST PANEL ── */
+#wp-list-wrap{padding:0}
+.wp-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.wp-list-title{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--t3)}
+.wp-list-clear{font-size:11px;font-weight:600;color:var(--err);background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
+.wp-list-clear:hover{text-decoration:underline}
+.wp-card{background:var(--fb);border:1px solid var(--fd);border-radius:var(--r);margin-bottom:6px;overflow:hidden}
+.wp-card-header{display:flex;align-items:center;padding:7px 10px;background:var(--w);border-bottom:1px solid var(--fd);gap:6px}
+.wp-card-title{font-size:13px;font-weight:600;color:var(--ac);flex:1}
+.wp-card-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--fd);background:var(--fb);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.wp-card-btn:hover{background:var(--al);border-color:var(--ac)}
+.wp-card-btn.del:hover{background:#fef2f2;border-color:#fca5a5}
+.wp-card-btn svg{width:13px;height:13px}
+.wp-card-body{padding:8px 10px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.wp-field{display:flex;flex-direction:column;gap:2px}
+.wp-field label{font-size:10.5px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.4px}
+.wp-field input,.wp-field select{width:100%;background:var(--w);border:1px solid var(--fd);border-radius:var(--r);color:var(--t);font-size:12.6px;padding:5px 7px;font-family:inherit;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .12s}
+.wp-field input:focus,.wp-field select:focus{border-color:var(--ac)}
+.wp-field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center}
+.wp-field.full{grid-column:1/-1}
+.wp-add-note{font-size:10.5px;color:var(--t3);text-align:center;padding:8px 0;line-height:1.5}
+/* ── ACTIONS ── */
+#actions{padding:11px;border-top:1px solid var(--sbc);flex-shrink:0}
+.btn-exp{width:100%;padding:10px;border-radius:var(--r);border:none;background:var(--ac);color:#fff;font-size:13.65px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-exp:hover{background:var(--ach)}.btn-exp:disabled{background:#c5ccd8;cursor:not-allowed}
+.btn-sec{width:100%;padding:8px;border-radius:var(--r);margin-top:6px;border:1px solid var(--fd);background:var(--w);color:var(--t2);font-size:12.6px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .12s}
+.btn-sec:hover{background:var(--fb);color:var(--t);border-color:#b0b8c8}
+/* MAP */
+#map-wrap{flex:1;position:relative;overflow:hidden;min-width:0}
+#leaflet-map{width:100%;height:100%}
+.leaflet-container{font-family:'Inter',sans-serif !important}
+.leaflet-control-zoom a{font-family:'Inter',sans-serif !important;color:var(--t2) !important;background:var(--w) !important;border-color:var(--fd) !important}
+/* SEARCH */
+#search-wrap{position:absolute;top:12px;left:12px;z-index:400;display:flex;align-items:center;background:var(--w);border:1px solid var(--fd);border-radius:var(--r2);box-shadow:var(--sh);overflow:hidden;width:255px;max-width:calc(100vw - 130px)}
+#search-wrap svg{margin-left:10px;flex-shrink:0;color:var(--t3)}
+#search-inp{flex:1;border:none;outline:none;padding:8px 8px;font-size:13.65px;font-family:inherit;color:var(--t);background:transparent;min-width:0}
+#search-inp::placeholder{color:var(--t3)}
+#search-go{padding:0 10px;height:34px;border:none;background:transparent;cursor:pointer;color:var(--t3);display:flex;align-items:center;border-left:1px solid var(--fd)}
+/* MAP TOOLS */
+#mtools{position:absolute;top:12px;right:12px;z-index:400;display:flex;flex-direction:column;gap:4px}
+.mbt{width:34px;height:34px;background:var(--w);border:1px solid var(--fd);border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:all .12s;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.mbt svg{width:15px;height:15px}
+.mbt:hover{background:var(--fb);color:var(--t);border-color:#b0b8c8}
+.mbt.active{background:var(--al);border-color:var(--ac);color:var(--ac)}
+.mbt.red{color:var(--err)}.mbt.red:hover{background:#fef2f2;border-color:#fca5a5}
+/* STATUS / SNAP */
+#snap-hint{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);z-index:400;background:rgba(22,163,74,.92);color:#fff;font-size:11.55px;font-weight:600;padding:5px 14px;border-radius:99px;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
+#snap-hint.show{opacity:1}
+#status-bar{position:absolute;bottom:12px;left:12px;z-index:400;background:rgba(255,255,255,.93);border:1px solid var(--fd);border-radius:var(--r);padding:4px 11px;font-size:11.55px;font-weight:500;color:var(--t2);backdrop-filter:blur(6px);box-shadow:0 1px 6px rgba(0,0,0,.08);max-width:calc(100vw - 120px)}
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:16px;z-index:9999;background:var(--w);border:1px solid var(--fd);border-radius:var(--r2);padding:10px 14px;font-size:13.65px;color:var(--t);box-shadow:var(--sh);opacity:0;transform:translateY(6px);transition:all .18s;pointer-events:none;max-width:min(300px,90vw)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.success{border-left:3px solid var(--ok)}
+#toast.error{border-left:3px solid var(--err)}
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:499}
+/* HIDDEN PANELS */
+#orbit-params,#linear-params,#wp-params{display:none}
+#tgl-double-row{display:flex}
+/* FINISH BTN */
+#fin-bar-wrap{margin-bottom:9px}
+/* Draw-mode crosshair cursor */
+.leaflet-container.mode-draw{cursor:crosshair !important}
+.leaflet-container.mode-draw .leaflet-interactive{cursor:crosshair !important}
+.leaflet-container.mode-draw path.leaflet-interactive{pointer-events:none}
+.leaflet-container.mode-draw .leaflet-marker-icon{cursor:grab !important}
+.leaflet-container.mode-draw .leaflet-dragging .leaflet-marker-icon{cursor:grabbing !important}
+/* RESPONSIVE */
+@media(max-width:768px){
+  #menu-btn{display:flex}
+  #sidebar{position:fixed;top:50px;left:0;bottom:0;transform:translateX(-100%);box-shadow:4px 0 24px rgba(0,0,0,.15);z-index:600}
+  #sidebar.open{transform:translateX(0)}
+  #overlay{display:block;opacity:0;pointer-events:none;transition:opacity .25s}
+  #overlay.show{opacity:1;pointer-events:auto}
+  #map-wrap{width:100%}
+  #search-wrap{width:calc(100vw - 110px);max-width:none}
+}
+@media(max-width:480px){
+  #topbar{padding:0 10px;gap:7px}
+  .logo-txt{font-size:13px}
+  .tb-btn{padding:4px 8px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <svg class="logo-icon" viewBox="0 0 26 26" fill="none">
+    <path d="M13 2.5L5.5 7.5v11l7.5 5 7.5-5v-11L13 2.5z" stroke="#1a6fde" stroke-width="1.5" fill="rgba(26,111,222,.08)"/>
+    <circle cx="13" cy="13" r="2.5" fill="#1a6fde"/>
+    <path d="M13 10.5V8M13 15.5V18M10.5 13H8M15.5 13H18" stroke="#1a6fde" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+  <span class="logo-txt">DJI <b>Mapper</b> Pro</span>
+  <span class="tb-space"></span>
+  <button class="tb-btn" onclick="loadDemo()">Demo</button>
+  <button class="tb-btn danger" onclick="clearAll()">Limpar</button>
+  <button id="menu-btn" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+</div>
+<div id="overlay" onclick="closeSidebar()"></div>
+<div id="main">
+<div id="sidebar">
+<div id="sb-scroll">
+
+  <!-- MODE TABS -->
+  <div class="sec">
+    <div class="mtabs">
+      <button class="mtab active" id="tab-grade" onclick="setMode('grade')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Grade
+      </button>
+      <button class="mtab" id="tab-linear" onclick="setMode('linear')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 6h18M3 18h18"/></svg>Linear
+      </button>
+      <button class="mtab" id="tab-orbita" onclick="setMode('orbita')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Órbita
+      </button>
+      <button class="mtab" id="tab-waypoints" onclick="setMode('waypoints')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7l-7 10M12 7l7 10"/></svg>Manual
+      </button>
+    </div>
+  </div>
+
+  <!-- EQUIPMENT -->
+  <div class="sec">
+    <div class="sec-lbl">Equipamento</div>
+    <div class="field">
+      <select id="drone-sel" onchange="updateDrone()">
+        <option value="mini4pro">DJI Mini 4 Pro</option>
+        <option value="mini5pro">DJI Mini 5 Pro</option>
+        <option value="air3wide">DJI Air 3 Wide</option>
+        <option value="air3s">DJI Air 3S</option>
+        <option value="mavic3">DJI Mavic 3</option>
+        <option value="mavic3classic">DJI Mavic 3 Classic</option>
+        <option value="mavic3pro">DJI Mavic 3 Pro</option>
+        <option value="mavic4pro">DJI Mavic 4 Pro</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- FLIGHT PARAMS -->
+  <div class="sec">
+    <div class="sec-lbl">Parâmetros de Voo</div>
+    <div class="f2">
+      <div class="field"><label>Altitude (m)</label><input type="number" id="altitude" value="60" min="10" max="500" oninput="onAltChange(this.value)"></div>
+      <div class="field"><label>GSD (cm/px)</label><input type="number" id="gsd-input" value="2.10" min="0.5" max="30" step="0.01" oninput="onGsdChange(this.value)"></div>
+    </div>
+    <div class="field"><label>Velocidade (m/s)</label><input type="number" id="speed" value="5" min="1" max="15" step="0.5" oninput="updateCalc()"></div>
+  </div>
+
+  <!-- GRADE PARAMS -->
+  <div id="grid-params">
+    <div class="sec">
+      <div class="sec-lbl">Fotogrametria</div>
+      <div class="f2">
+        <div class="field"><label>Sobrep. Frontal (%)</label><input type="number" id="ovf" value="80" min="40" max="95" step="5" oninput="updateCalc()"></div>
+        <div class="field"><label>Sobrep. Lateral (%)</label><input type="number" id="ovs" value="75" min="30" max="90" step="5" oninput="updateCalc()"></div>
+      </div>
+      <div class="field"><label>Margem extra (m)</label><input type="number" id="margin" value="0" min="0" max="500" oninput="updateCalc()"></div>
+      <div class="sf">
+        <div class="sf-hdr"><span class="sf-lbl">Ângulo de Voo (°)</span><span class="sf-val" id="ang-val">0°</span></div>
+        <input type="range" id="angle" min="0" max="359" value="0" step="1" oninput="document.getElementById('ang-val').textContent=this.value+'°';updateCalc()">
+      </div>
+    </div>
+  </div>
+
+  <!-- LINEAR PARAMS -->
+  <div id="linear-params">
+    <div class="sec">
+      <div class="sec-lbl">Corredor Linear</div>
+      <div class="f2">
+        <div class="field"><label>Sobrep. Frontal (%)</label><input type="number" id="lin-ovf" value="80" min="40" max="95" step="5" oninput="updateCalc()"></div>
+        <div class="field"><label>Sobrep. Lateral (%)</label><input type="number" id="lin-ovs" value="75" min="30" max="90" step="5" oninput="updateCalc()"></div>
+      </div>
+      <div class="sf">
+        <div class="sf-hdr"><span class="sf-lbl">Nº de Linhas</span><span class="sf-val" id="lin-lines-val">3</span></div>
+        <input type="range" id="lin-lines" min="0" max="4" step="1" value="0"
+          oninput="document.getElementById('lin-lines-val').textContent=(+this.value*2+3);updateCalc()">
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);background:var(--fb);border:1px solid var(--fd);border-radius:var(--r);padding:5px 8px;line-height:1.5">
+        Clique para adicionar pontos. <b>Duplo clique</b> para finalizar.
+      </div>
+    </div>
+  </div>
+
+  <!-- ORBIT PARAMS -->
+  <div id="orbit-params">
+    <div class="sec">
+      <div class="sec-lbl">Órbita</div>
+      <div class="sf">
+        <div class="sf-hdr"><span class="sf-lbl">Raio (m)</span><span class="sf-val" id="orb-r-val">30m</span></div>
+        <input type="range" id="orb-r" min="5" max="300" value="30" step="1" oninput="document.getElementById('orb-r-val').textContent=this.value+'m';updateCalc();if(orbitCenter)drawOrbitPreview()">
+      </div>
+      <div class="sf">
+        <div class="sf-hdr"><span class="sf-lbl">Sobrep. Lateral (%)</span><span class="sf-val" id="orb-ovs-val">70%</span></div>
+        <input type="range" id="orb-ovs" min="30" max="90" value="70" step="5" oninput="document.getElementById('orb-ovs-val').textContent=this.value+'%';updateCalc()">
+      </div>
+      <div class="sf">
+        <div class="sf-hdr"><span class="sf-lbl">Início da Órbita (°)</span><span class="sf-val" id="orb-start-val">0°</span></div>
+        <input type="range" id="orb-start" min="0" max="359" value="0" step="1" oninput="document.getElementById('orb-start-val').textContent=this.value+'°';updateCalc()">
+      </div>
+      <div class="f2b">
+        <button class="fbtn active" id="orb-cw" onclick="setODir('cw')">↻ Horário</button>
+        <button class="fbtn" id="orb-ccw" onclick="setODir('ccw')">↺ Anti-H</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAYPOINTS PANEL -->
+  <div id="wp-params">
+    <div class="sec">
+      <div id="wp-list-wrap">
+        <div class="wp-list-header">
+          <span class="wp-list-title">Lista de Waypoints</span>
+          <button class="wp-list-clear" onclick="clearAll()">✕ Limpar Rota</button>
+        </div>
+        <div id="wp-cards"></div>
+        <div class="wp-add-note">Use a ferramenta de desenho no mapa para adicionar pontos.<br>
+        <b>Duplo clique</b> para finalizar a rota.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <!-- GIMBAL & FINISH -->
+  <div class="sec" id="gimbal-section">
+    <div class="sec-lbl">Gimbal & Ação Final</div>
+    <div class="sf">
+      <div class="sf-hdr"><span class="sf-lbl">Ângulo Gimbal (°)</span><span class="sf-val" id="gimb-val">-90°</span></div>
+      <input type="range" id="gimbal" min="-90" max="0" value="-90" step="1" oninput="document.getElementById('gimb-val').textContent=this.value+'°'">
+    </div>
+    <div id="fin-bar-wrap">
+      <div class="f2b">
+        <button class="fbtn" id="fin-hover" onclick="setFinish('hover')">Pairar</button>
+        <button class="fbtn active" id="fin-rth" onclick="setFinish('rth')">RTH</button>
+      </div>
+    </div>
+    <div class="tgl-list">
+      <div class="tgl-row" id="tgl-double-row">
+        <div class="tgl-info"><span class="tgl-name">Grade Dupla (3D)</span><span class="tgl-sub">+90° contínuo</span></div>
+        <button class="toggle" id="tgl-double" onclick="toggleOpt('tgl-double')"></button>
+      </div>
+      <div class="tgl-row" id="tgl-terrain-row">
+        <div class="tgl-info"><span class="tgl-name">Acomp. Terreno</span><span class="tgl-sub">Gradiente de altitude</span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="tgl-icon-btn" id="btn-takeoff-ref" onclick="toggleTakeoffMode()" title="Definir ponto de decolagem (referência de altitude)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12L7 17M12 12L17 17"/><path d="M5 8h14M7 4h10"/></svg>
+          </button>
+          <button class="toggle" id="tgl-terrain" onclick="toggleTerrain()"></button>
+        </div>
+      </div>
+    </div>
+    <div id="terrain-legend">
+      <div class="legend-bar"></div>
+      <div class="legend-labels"><span id="leg-min">—m</span><span style="color:var(--t3)">altitude (m)</span><span id="leg-max">—m</span></div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <!-- STATS -->
+  <div class="sec">
+    <div class="sec-lbl">Estatísticas</div>
+    <div class="sgrid">
+      <div class="stat"><div class="sl">Área</div><div class="sv" id="s-area">—<span class="su">ha</span></div></div>
+      <div class="stat"><div class="sl">Linhas</div><div class="sv" id="s-lines">—</div></div>
+      <div class="stat"><div class="sl">Waypoints</div><div class="sv" id="s-wps">—</div></div>
+      <div class="stat"><div class="sl">Distância</div><div class="sv" id="s-dist">—<span class="su">m</span></div></div>
+      <div class="stat"><div class="sl">Tempo</div><div class="sv" id="s-time">—<span class="su">min</span></div></div>
+      <div class="stat"><div class="sl">Baterias</div><div class="sv" id="s-bat">—</div></div>
+    </div>
+    <div style="margin-top:5px" class="info-row">
+      <span class="info-lbl">Fotos estimadas</span>
+      <span class="info-val" id="s-photos">—</span>
+    </div>
+  </div>
+  <div style="height:7px"></div>
+</div><!-- /sb-scroll -->
+<div id="actions">
+  <button class="btn-exp" id="btn-exp" onclick="exportKMZ()" disabled>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    Exportar KMZ (DJI Waypoint)
+  </button>
+  <button class="btn-sec" onclick="importKMZ()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    Importar KMZ / KML (Área)
+  </button>
+  <input type="file" id="file-imp" accept=".kml,.kmz" style="display:none" onchange="handleImport(event)">
+</div>
+</div><!-- /sidebar -->
+
+<!-- MAP -->
+<div id="map-wrap">
+  <div id="leaflet-map"></div>
+  <div id="search-wrap">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="search-inp" type="text" placeholder="Buscar endereço ou local..." onkeydown="if(event.key==='Enter')doSearch()">
+    <button id="search-go" onclick="doSearch()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+  <div id="mtools">
+    <button class="mbt active" id="tool-draw" onclick="setTool('draw')" title="Desenhar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+    </button>
+    <button class="mbt" id="tool-pan" onclick="setTool('pan')" title="Mover">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+    </button>
+    <button class="mbt" id="btn-maptype" onclick="toggleMapType()" title="Alternar Satélite/Mapa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M8 2v20M16 2v20M2 8h20M2 16h20"/></svg>
+    </button>
+    <button class="mbt" onclick="locateUser()" title="Localização">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+    </button>
+    <button class="mbt" id="btn-fit" onclick="fitView()" title="Zoom área" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+    </button>
+    <button class="mbt red" onclick="clearAll()" title="Apagar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+    </button>
+  </div>
+  <div id="snap-hint">Clique para fechar o polígono</div>
+  <div id="status-bar">Clique no mapa para adicionar pontos</div>
+</div>
+</div><!-- /main -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DRONES
+// ═══════════════════════════════════════════════════════════
+const DRONES={
+  mini4pro:    {name:'DJI Mini 4 Pro',      fl:6.656,sW:9.6, sH:7.2, iW:4032,iH:3024,batMin:34,dEnum:84,dSub:0,pEnum:20},
+  mini5pro:    {name:'DJI Mini 5 Pro',      fl:8.8,  sW:13.2,sH:9.9, iW:4032,iH:3024,batMin:36,dEnum:84,dSub:0,pEnum:20},
+  air3wide:    {name:'DJI Air 3 Wide',      fl:6.656,sW:9.6, sH:7.2, iW:4032,iH:3024,batMin:46,dEnum:84,dSub:0,pEnum:20},
+  air3s:       {name:'DJI Air 3S',          fl:8.8,  sW:13.2,sH:9.9, iW:4096,iH:3072,batMin:45,dEnum:84,dSub:0,pEnum:20},
+  mavic3:      {name:'DJI Mavic 3',         fl:12.29,sW:17.3,sH:13.0,iW:5280,iH:3956,batMin:46,dEnum:77,dSub:0,pEnum:66},
+  mavic3classic:{name:'DJI Mavic 3 Classic',fl:12.29,sW:17.3,sH:13.0,iW:5280,iH:3956,batMin:46,dEnum:77,dSub:0,pEnum:66},
+  mavic3pro:   {name:'DJI Mavic 3 Pro',     fl:12.29,sW:17.3,sH:13.0,iW:5280,iH:3956,batMin:43,dEnum:77,dSub:0,pEnum:66},
+  mavic4pro:   {name:'DJI Mavic 4 Pro',     fl:14.0, sW:17.4,sH:13.05,iW:6144,iH:4096,batMin:51,dEnum:84,dSub:0,pEnum:20},
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let map,drawLyr,gridLyr,terrainLyr;
+let pts=[],closed=false,prevLine=null,nearSnap=false;
+let orbitCenter=null;
+let droneKey='mini4pro',mode='grade',finish='rth',tool='draw',orbitDir='cw';
+let terrainOn=false;
+let takeoffRef=null,takeoffLyr=null,takeoffMode=false;
+let _terrainElevs=null,_terrainTakeoffElev=null; // per-WP terrain elevs from loadTerrain
+let _wps=null,_area=null;
+let startVertexIdx=0;
+let calcTimer=null;
+
+// Waypoint editor data (mode='waypoints')
+let wpData=[]; // [{alt,speed,gimbal,action,turnMode}]
+let clipboardWp=null; // copied wp config
+
+// ═══════════════════════════════════════════════════════════
+// DBLCLICK FIX — use a timer approach:
+// The problem: Leaflet fires 'click' once, then again (from the 2nd press of dblclick),
+// then fires 'dblclick'. We set a small delay on click so we can cancel it.
+// ═══════════════════════════════════════════════════════════
+let pendingClick=null; // setTimeout id for delayed click
+const CLICK_DELAY=220; // ms — longer than typical dblclick interval
+
+function mapClick(e){
+  if(takeoffMode){
+    takeoffRef=[e.latlng.lat,e.latlng.lng];
+    takeoffMode=false;
+    document.getElementById('btn-takeoff-ref').classList.remove('active');
+    map.getContainer().style.cursor='';
+    renderTakeoffMarker();
+    if(terrainOn&&closed)loadTerrain();
+    return;
+  }
+  if(tool!=='draw'||closed)return;
+  // Cancel pending click to handle dblclick properly
+  if(pendingClick){clearTimeout(pendingClick);pendingClick=null;return;}
+  pendingClick=setTimeout(()=>{
+    pendingClick=null;
+    doAddPoint(e.latlng);
+  },CLICK_DELAY);
+}
+
+function mapDblClick(e){
+  if(tool!=='draw'||closed)return;
+  // Cancel the pending single click(s)
+  if(pendingClick){clearTimeout(pendingClick);pendingClick=null;}
+  doFinalize(e.latlng);
+}
+
+function doAddPoint(latlng){
+  if(closed)return;
+  if(mode==='orbita'){
+    orbitCenter=[latlng.lat,latlng.lng];
+    drawOrbitPreview();generateOrbit();setStatus();return;
+  }
+  if(mode==='grade'&&isNearFirst(latlng)&&pts.length>=3){closePolygon();return;}
+  pts.push([latlng.lat,latlng.lng]);
+  if(mode==='waypoints'){wpData.push(defaultWpData());renderWpCards();}
+  redraw();setStatus();
+}
+
+function doFinalize(latlng){
+  if(closed)return;
+  if(mode==='orbita')return;
+  if(mode==='grade'){
+    if(pts.length<3){toast('Adicione ao menos 3 pontos','error');return;}
+    closePolygon();return;
+  }
+  // linear / waypoints: ADD the dblclick position as the final WP before closing
+  if(pts.length<1){toast('Adicione ao menos 1 ponto','error');return;}
+  // Avoid duplicate if dblclick is very close to last point (< 2m)
+  const lastPt=pts[pts.length-1];
+  const d2last=hav(lastPt[0],lastPt[1],latlng.lat,latlng.lng);
+  if(d2last>2){
+    pts.push([latlng.lat,latlng.lng]);
+    if(mode==='waypoints'){wpData.push(defaultWpData());renderWpCards();}
+    redraw();
+  }
+  if(pts.length<2){toast('Adicione ao menos 2 pontos','error');return;}
+  closedOpen();
+}
+
+function mapMove(e){
+  if(tool!=='draw'||closed)return;
+  if(mode==='orbita'){
+    // Orbit preview: update or create circle preview
+    const r=+document.getElementById('orb-r').value||30;
+    const cp=buildCircle(e.latlng.lat,e.latlng.lng,r,36,0);
+    const coords=[...cp,cp[0]];
+    if(prevLine&&prevLine._map){prevLine.setLatLngs(coords);}
+    else{
+      if(prevLine){try{drawLyr.removeLayer(prevLine);}catch(e){}}
+      prevLine=L.polyline(coords,{color:'#1a6fde',weight:1.5,dashArray:'5,4',opacity:.6,interactive:false}).addTo(drawLyr);
+    }
+    return;
+  }
+  if(!pts.length)return;
+  if(mode==='grade'){
+    const was=nearSnap;nearSnap=isNearFirst(e.latlng);
+    if(nearSnap!==was)document.getElementById('snap-hint').classList.toggle('show',nearSnap&&pts.length>=3);
+  }
+  const target=(mode==='grade'&&nearSnap&&pts.length>=3)?pts[0]:[e.latlng.lat,e.latlng.lng];
+  const coords=[...pts,target];
+  const col=nearSnap?'#16a34a':'#1a6fde';
+  if(prevLine&&prevLine._map){
+    prevLine.setLatLngs(coords);
+    // Update color only if changed
+    if(prevLine.options.color!==col)prevLine.setStyle({color:col});
+  }else{
+    if(prevLine){try{drawLyr.removeLayer(prevLine);}catch(e){}}
+    prevLine=L.polyline(coords,{color:col,weight:1.5,dashArray:'6,4',opacity:.5,interactive:false}).addTo(drawLyr);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAP INIT
+// ═══════════════════════════════════════════════════════════
+let tileLayerSat=null, tileLayerMap=null, mapTypeSat=true;
+function initMap(){
+  map=L.map('leaflet-map',{zoomControl:false,doubleClickZoom:false}).setView([-21.17,-47.81],15);
+  tileLayerSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:21});
+  // CartoDB Positron — no referer restriction
+  tileLayerMap=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CartoDB',subdomains:'abcd',maxZoom:21});
+  tileLayerSat.addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  drawLyr=L.layerGroup().addTo(map);
+  gridLyr=L.layerGroup().addTo(map);
+  terrainLyr=L.layerGroup().addTo(map);
+  takeoffLyr=L.layerGroup().addTo(map);
+  map.on('click',mapClick);
+  map.on('dblclick',mapDblClick);
+  map.on('mousemove',mapMove);
+  // ESC key cancels drawing
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!closed)cancelDraw();});
+  updateDroneInfo();
+  updateDrawCursor();
+}
+
+function cancelDraw(){
+  if(pts.length>0||orbitCenter){clearAll();}
+}
+
+function toggleMapType(){
+  mapTypeSat=!mapTypeSat;
+  if(mapTypeSat){map.removeLayer(tileLayerMap);tileLayerSat.addTo(map);}
+  else{map.removeLayer(tileLayerSat);tileLayerMap.addTo(map);}
+  const btn=document.getElementById('btn-maptype');
+  btn.title=mapTypeSat?'Vista Satélite':'Vista Mapa';
+  btn.classList.toggle('active',!mapTypeSat);
+}
+
+function updateDrawCursor(){
+  const el=document.getElementById('leaflet-map');
+  if(el)el.classList.toggle('mode-draw',tool==='draw'&&!closed);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOBILE
+// ═══════════════════════════════════════════════════════════
+function toggleMenu(){
+  const sb=document.getElementById('sidebar'),mb=document.getElementById('menu-btn'),ov=document.getElementById('overlay');
+  const open=sb.classList.toggle('open');mb.classList.toggle('open',open);ov.classList.toggle('show',open);
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('menu-btn').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SNAP
+// ═══════════════════════════════════════════════════════════
+const SNAP_PX=22;
+function isNearFirst(ll){
+  if(pts.length<3)return false;
+  const p1=map.latLngToContainerPoint(L.latLng(pts[0][0],pts[0][1]));
+  const p2=map.latLngToContainerPoint(ll);
+  return Math.hypot(p1.x-p2.x,p1.y-p2.y)<=SNAP_PX;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CLOSE FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function closePolygon(){
+  closed=true;nearSnap=false;
+  document.getElementById('snap-hint').classList.remove('show');
+  if(prevLine){drawLyr.removeLayer(prevLine);prevLine=null;}
+  startVertexIdx=0;
+  redraw();generateGrid();setStatus();
+  if(terrainOn)loadTerrain();
+}
+function closedOpen(){
+  closed=true;
+  if(prevLine){drawLyr.removeLayer(prevLine);prevLine=null;}
+  redraw();
+  if(mode==='linear')generateLinear();
+  else generateWaypoints();
+  setStatus();
+}
+
+// ═══════════════════════════════════════════════════════════
+// REDRAW with numbered vertices — draggable for live editing
+// ═══════════════════════════════════════════════════════════
+let dragMarkers=[];
+function redraw(){
+  drawLyr.clearLayers();prevLine=null;dragMarkers=[];
+  if(!pts.length)return;
+  if(mode==='grade'&&closed){
+    L.polygon(pts,{color:'#1a6fde',weight:2,fillColor:'#1a6fde',fillOpacity:.07,dashArray:'6,4'}).addTo(drawLyr);
+  }else if(pts.length>1){
+    L.polyline(pts,{color:'#1a6fde',weight:2,opacity:.7}).addTo(drawLyr);
+  }
+  pts.forEach((p,i)=>{
+    const col='#1a4fa0';
+    const icon=L.divIcon({className:'',html:`<svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="12" fill="white" stroke="${col}" stroke-width="2.5"/>
+      <text x="14" y="19" text-anchor="middle" font-size="11" font-weight="600" fill="${col}" font-family="Inter,sans-serif">${i+1}</text>
+    </svg>`,iconSize:[28,28],iconAnchor:[14,14]});
+
+    const m=L.marker(p,{icon,zIndexOffset:100,draggable:true}).addTo(drawLyr);
+    dragMarkers.push(m);
+
+    // Drag: update pts and regenerate in real-time
+    m.on('drag',ev=>{
+      pts[i]=[ev.latlng.lat,ev.latlng.lng];
+      // Redraw the path/polygon line live without recreating all markers
+      if(mode==='grade'&&closed) gridLyr.clearLayers();
+      redrawLinesOnly();
+    });
+    m.on('dragend',()=>{
+      redraw();
+      if(closed||mode==='linear'||mode==='waypoints'){
+        if(mode==='grade')generateGrid();
+        else if(mode==='linear')generateLinear();
+        else if(mode==='waypoints')generateWaypoints();
+        if(terrainOn)loadTerrain();
+      }
+    });
+
+    // Dblclick on vertex to set start (grade)
+    if(mode==='grade'){
+      m.on('dblclick',ev=>{
+        L.DomEvent.stopPropagation(ev);
+        if(pendingClick){clearTimeout(pendingClick);pendingClick=null;}
+        startVertexIdx=i;redraw();generateGrid();
+      });
+    }
+  });
+}
+
+// Lightweight: just redraw the connecting line without recreating markers
+function redrawLinesOnly(){
+  // Remove old lines but keep markers
+  drawLyr.eachLayer(l=>{
+    if(l instanceof L.Polyline||l instanceof L.Polygon) drawLyr.removeLayer(l);
+  });
+  if(mode==='grade'&&closed)
+    L.polygon(pts,{color:'#1a6fde',weight:2,fillColor:'#1a6fde',fillOpacity:.07,dashArray:'6,4'}).addTo(drawLyr);
+  else if(pts.length>1)
+    L.polyline(pts,{color:'#1a6fde',weight:2,opacity:.7}).addTo(drawLyr);
+}
+
+function drawOrbitPreview(){
+  drawLyr.clearLayers();
+  if(!orbitCenter)return;
+  const icon=L.divIcon({className:'',html:`<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#16a34a" stroke="white" stroke-width="2.5"/><text x="16" y="21" text-anchor="middle" font-size="12" font-weight="700" fill="white" font-family="Inter,sans-serif">C</text></svg>`,iconSize:[32,32],iconAnchor:[16,16]});
+  const m=L.marker(orbitCenter,{icon,zIndexOffset:200,draggable:true}).addTo(drawLyr);
+  m.on('drag',ev=>{
+    orbitCenter=[ev.latlng.lat,ev.latlng.lng];
+    drawLyr.eachLayer(l=>{if(l instanceof L.Circle)drawLyr.removeLayer(l);});
+    const r=+document.getElementById('orb-r').value||30;
+    L.circle(orbitCenter,{radius:r,color:'#1a6fde',weight:1.5,fillColor:'#1a6fde',fillOpacity:.05}).addTo(drawLyr);
+  });
+  m.on('dragend',()=>{generateOrbit();drawOrbitPreview();});
+  const r=+document.getElementById('orb-r').value||30;
+  L.circle(orbitCenter,{radius:r,color:'#1a6fde',weight:1.5,fillColor:'#1a6fde',fillOpacity:.05}).addTo(drawLyr);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ALTITUDE ↔ GSD SYNC
+// ═══════════════════════════════════════════════════════════
+function onAltChange(val){
+  const d=DRONES[droneKey];
+  const alt=parseFloat(val)||60;
+  const gsd=(d.sH/d.fl)*alt*100/d.iH;
+  document.getElementById('gsd-input').value=gsd.toFixed(2);
+  scheduleCalc();
+}
+function onGsdChange(val){
+  const d=DRONES[droneKey];
+  const gsd=parseFloat(val)||2;
+  const alt=gsd*d.iH*d.fl/(d.sH*100);
+  document.getElementById('altitude').value=Math.round(alt*10)/10;
+  scheduleCalc();
+}
+function scheduleCalc(){clearTimeout(calcTimer);calcTimer=setTimeout(updateCalc,120);}
+function getDroneCalc(){
+  const d=DRONES[droneKey];
+  const alt=+document.getElementById('altitude').value||60;
+  const gsd=(d.sH/d.fl)*alt*100/d.iH;
+  const fW=(d.sW/d.fl)*alt;
+  const fH=(d.sH/d.fl)*alt;
+  return{d,alt,gsd,fW,fH};
+}
+
+// ═══════════════════════════════════════════════════════════
+// POLYGON CLIPPING — clip a horizontal line segment to polygon
+// Uses ray casting: for a given Y in rotated frame, find X intersections
+// ═══════════════════════════════════════════════════════════
+function clipLineToPolygon(y, polyRot){
+  // polyRot = [{x,y}] — polygon in rotated frame
+  const xs=[];
+  const n=polyRot.length;
+  for(let i=0;i<n;i++){
+    const a=polyRot[i], b=polyRot[(i+1)%n];
+    if((a.y<=y&&b.y>y)||(b.y<=y&&a.y>y)){
+      const t=(y-a.y)/(b.y-a.y);
+      xs.push(a.x+t*(b.x-a.x));
+    }
+  }
+  xs.sort((a,b)=>a-b);
+  // Return pairs [xMin, xMax]
+  const segs=[];
+  for(let i=0;i+1<xs.length;i+=2)segs.push([xs[i],xs[i+1]]);
+  return segs;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE GRID — properly clipped inside polygon at any angle
+// ═══════════════════════════════════════════════════════════
+function generateGrid(){
+  gridLyr.clearLayers();
+  if(pts.length<3){clrStats();return;}
+  const{d,alt,fW,fH}=getDroneCalc();
+  const spd=+document.getElementById('speed').value||5;
+  const ovf=+document.getElementById('ovf').value/100;
+  const ovs=+document.getElementById('ovs').value/100;
+  const ang=+document.getElementById('angle').value||0;
+  const mar=+document.getElementById('margin').value||0;
+  const dbl=document.getElementById('tgl-double').classList.contains('on');
+
+  const stripSpacing=fW*(1-ovs);
+  const photoSpacing=fH*(1-ovf);
+
+  const ref=pts[0];
+  const mp=pts.map(p=>ll2m(p[0],p[1],ref[0],ref[1]));
+  const cx=mp.reduce((s,p)=>s+p[0],0)/mp.length;
+  const cy=mp.reduce((s,p)=>s+p[1],0)/mp.length;
+  const angRad=ang*Math.PI/180;
+
+  // Rotate polygon to aligned frame
+  const rp=mp.map(p=>{const[rx,ry]=rot(p[0]-cx,p[1]-cy,-angRad);return{x:rx,y:ry};});
+
+  // Bounding box in rotated frame
+  const rxAll=rp.map(p=>p.x), ryAll=rp.map(p=>p.y);
+  const rxMin=Math.min(...rxAll)-mar, rxMax=Math.max(...rxAll)+mar;
+  const ryMin=Math.min(...ryAll)-mar, ryMax=Math.max(...ryAll)+mar;
+
+  // Expand polygon by margin for clipping
+  const centX=(rxMin+rxMax)/2, centY=(ryMin+ryMax)/2;
+  const rpExpanded=rp.map(p=>({
+    x: centX+(p.x-centX)*(1+mar/Math.max(1,(rxMax-rxMin)/2)),
+    y: centY+(p.y-centY)*(1+mar/Math.max(1,(ryMax-ryMin)/2))
+  }));
+  const clipPoly=mar>0?rpExpanded:rp;
+
+  // Build rows: each strip clips to polygon; photos use a SHARED grid origin
+  // so photos in adjacent strips are perfectly aligned side-by-side (same X positions)
+  const buildRows=(swapXY=false)=>{
+    const rows=[];
+    const sSpacing=stripSpacing;  // always cross-track
+    const pSpacing=photoSpacing;  // always along-track
+    const Y0=swapXY?rxMin:ryMin, Y1=swapXY?rxMax:ryMax;
+    const clipPolyForScan=swapXY?clipPoly.map(p=>({x:p.y,y:p.x})):clipPoly;
+    const nStrips=Math.ceil((Y1-Y0)/sSpacing)+2;
+
+    for(let i=0;i<nStrips;i++){
+      const y=Y0+i*sSpacing;
+      if(y>Y1+sSpacing*.5)break;
+      const segs=clipLineToPolygon(y,clipPolyForScan);
+      for(const [xA,xB] of segs){
+        const row=[];
+        // Snap x-start to shared global grid; offset by half-spacing so
+        // first/last photos are never right at the polygon edge/vertex
+        const xGlobal0 = swapXY?ryMin:rxMin;
+        const xStart = xGlobal0 + Math.ceil((xA-xGlobal0)/pSpacing - 0.5)*pSpacing + pSpacing*0.5;
+        for(let x=xStart; x<=xB+0.001; x+=pSpacing){
+          const[ux,uy]=swapXY?rot(y,x,angRad):rot(x,y,angRad);
+          row.push(m2ll(ux+cx,uy+cy,ref[0],ref[1]));
+        }
+        if(row.length>0){
+          if(rows.length%2===1)row.reverse();
+          rows.push(row);
+        }
+      }
+    }
+    return rows;
+  };
+
+  let pass1=buildRows(false);
+  let pass2=dbl?buildRows(true):[];
+
+  // Orient pass1 so the START is the corner nearest the selected vertex
+  if(pass1.length>0){
+    // Collect 4 corners of pass1 grid
+    const c00=pass1[0][0];
+    const c01=pass1[0][pass1[0].length-1];
+    const cN0=pass1[pass1.length-1][0];
+    const cNN=pass1[pass1.length-1][pass1[pass1.length-1].length-1];
+    const sv=pts[startVertexIdx];
+    // Find which corner is closest to selected vertex
+    const corners=[c00,c01,cN0,cNN];
+    let bestDist=Infinity,bestIdx=0;
+    corners.forEach((c,ci)=>{const d=hav(sv[0],sv[1],c[0],c[1]);if(d<bestDist){bestDist=d;bestIdx=ci;}});
+    // Orient pass1 so the closest corner becomes the first waypoint
+    if(bestIdx===1||bestIdx===3){
+      // Flip row directions (so last col becomes first)
+      pass1.forEach(r=>r.reverse());
+    }
+    if(bestIdx===2||bestIdx===3){
+      // Flip row order (so last row becomes first)
+      pass1.reverse();
+      pass1.forEach(r=>r.reverse()); // also flip direction to maintain boustrophedon
+    }
+  }
+
+  // Pass2 must START near the END of pass1 (save battery)
+  if(dbl&&pass2.length&&pass1.length){
+    const endOfPass1=pass1[pass1.length-1][pass1[pass1.length-1].length-1];
+    const c00=pass2[0][0];
+    const c01=pass2[0][pass2[0].length-1];
+    const cN0=pass2[pass2.length-1][0];
+    const cNN=pass2[pass2.length-1][pass2[pass2.length-1].length-1];
+    const corners=[c00,c01,cN0,cNN];
+    let bestDist=Infinity,bestIdx=0;
+    corners.forEach((c,ci)=>{const d=hav(endOfPass1[0],endOfPass1[1],c[0],c[1]);if(d<bestDist){bestDist=d;bestIdx=ci;}});
+    if(bestIdx===1||bestIdx===3)pass2.forEach(r=>r.reverse());
+    if(bestIdx===2||bestIdx===3){pass2.reverse();pass2.forEach(r=>r.reverse());}
+  }
+
+  const allWps=buildWpList([...pass1,...pass2],photoSpacing,alt,spd,ang);
+  if(!allWps.length){clrStats();return;}
+  _wps=allWps;_area=pts;
+
+  const nLines=pass1.length+(dbl?pass2.length:0);
+  const photoCount=allWps.filter(w=>w.type==='photo').length;
+  const dist=calcDist(allWps);
+  const tMin=(dist/spd+photoCount*.3)/60;
+  const bats=Math.ceil(tMin/d.batMin);
+  const areaHa=(rxMax-rxMin)*(ryMax-ryMin)/10000;
+
+  L.polygon(pts,{color:'#1a6fde',weight:2,fillColor:'#1a6fde',fillOpacity:.05,dashArray:'6,4'}).addTo(gridLyr);
+  L.polyline(allWps.map(w=>[w.lat,w.lon]),{color:'#16a34a',weight:1.5,opacity:.8}).addTo(gridLyr);
+  // Find first and last photo WPs for Start/End markers
+  const photoWps=allWps.filter(w=>w.type==='photo');
+  allWps.forEach((w,wi)=>{
+    if(w.type==='photo')L.circleMarker([w.lat,w.lon],{radius:2.5,color:'#16a34a',fillColor:'#16a34a',fillOpacity:1,weight:1}).addTo(gridLyr);
+    else if(w.type==='gimbal'){
+      // Gimbal setup: just a small orange dot, no S
+      L.circleMarker([w.lat,w.lon],{radius:4,color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:1,weight:2}).addTo(gridLyr).bindTooltip('Setup Gimbal');
+    }
+  });
+  // Start marker (first photo WP) — green S
+  if(photoWps.length){
+    const sp=photoWps[0];
+    const sIc=L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#16a34a" stroke="white" stroke-width="2"/><text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">S</text></svg>`,iconSize:[22,22],iconAnchor:[11,11]});
+    L.marker([sp.lat,sp.lon],{icon:sIc,zIndexOffset:300}).addTo(gridLyr).bindTooltip('Início');
+  }
+  // End marker (last photo WP) — red E
+  if(photoWps.length){
+    const ep=photoWps[photoWps.length-1];
+    const eIc=L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#dc2626" stroke="white" stroke-width="2"/><text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">E</text></svg>`,iconSize:[22,22],iconAnchor:[11,11]});
+    L.marker([ep.lat,ep.lon],{icon:eIc,zIndexOffset:300}).addTo(gridLyr).bindTooltip('Fim');
+  }
+  showStats({area:areaHa,lines:nLines,wps:allWps.length,dist,tMin,photos:photoCount,bats});
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILD WP LIST with gimbal setup + technical turn WPs
+// ═══════════════════════════════════════════════════════════
+// 1m in degrees latitude
+const ONE_METER_DEG = 1/111320;
+const TWO_METER_DEG = 4/111320; // 4m tech WP arc offset
+
+function buildWpList(rows,photoSpacing,alt,spd,ang){
+  const allWps=[];
+  if(!rows.length||!rows[0].length)return allWps;
+  const firstPt=rows[0][0];
+  const firstHead=rows[0].length>=2?Math.round(bearingTo(firstPt[0],firstPt[1],rows[0][1][0],rows[0][1][1])):ang;
+
+  // WP 0: gimbal setup — exactly 1m BEFORE the first photo of the whole mission
+  {
+    const second=rows[0].length>=2?rows[0][1]:firstPt;
+    const dx=firstPt[0]-second[0], dy=firstPt[1]-second[1];
+    const len=Math.hypot(dx,dy)||1e-9;
+    const offDeg=ONE_METER_DEG;
+    allWps.push({
+      lat:firstPt[0]+dx/len*offDeg,
+      lon:firstPt[1]+dy/len*offDeg,
+      alt,type:'gimbal',spd:2,heading:firstHead,action:'gimbal_only'
+    });
+  }
+
+  rows.forEach((row,ri)=>{
+    if(!row.length)return;
+    const isLastRow=(ri===rows.length-1);
+
+    // Turn-in tech WP — 1m before first photo of this row
+    // Skip row 0: the gimbal WP already sits at that exact position
+    if(ri>0&&row.length>=1){
+      const first=row[0],second=row.length>1?row[1]:row[0];
+      const hdg=Math.round(bearingTo(first[0],first[1],second[0],second[1]));
+      const dx=first[0]-second[0],dy=first[1]-second[1];
+      const len=Math.hypot(dx,dy)||1e-9;
+      allWps.push({lat:first[0]+dx/len*TWO_METER_DEG,lon:first[1]+dy/len*TWO_METER_DEG,alt,type:'tech',spd,heading:hdg,action:'none',turnMode:'pass'});
+    }
+
+    // Photo WPs
+    row.forEach((w,wi)=>{
+      const nextW=row[wi+1];
+      const hdg=nextW?Math.round(bearingTo(w[0],w[1],nextW[0],nextW[1])):
+                (wi>0?Math.round(bearingTo(row[wi-1][0],row[wi-1][1],w[0],w[1])):ang);
+      allWps.push({lat:w[0],lon:w[1],alt,type:'photo',spd,heading:hdg,action:'photo'});
+    });
+
+    // Turn-out tech WP — exactly 1m after last photo (skip LAST row of entire mission)
+    if(!isLastRow&&row.length>=2){
+      const last=row[row.length-1],prev=row[row.length-2];
+      const hdg=Math.round(bearingTo(prev[0],prev[1],last[0],last[1]));
+      const dx=last[0]-prev[0],dy=last[1]-prev[1];
+      const len=Math.hypot(dx,dy)||1e-9;
+      allWps.push({lat:last[0]+dx/len*TWO_METER_DEG,lon:last[1]+dy/len*TWO_METER_DEG,alt,type:'tech',spd,heading:hdg,action:'none',turnMode:'pass'});
+    }
+  });
+  return allWps;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE LINEAR
+// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// OFFSET POLYLINE — proper parallel line at fixed distance
+// Computes intersection of adjacent offset segments at corners
+// so the parallel line is truly straight on each segment
+// ═══════════════════════════════════════════════════════════
+function offsetPolyline(points,offsetM){
+  // offsetM in metres, perpendicular (positive = left side)
+  if(points.length<2)return points;
+  const result=[];
+  const segs=[];
+  // Compute each segment's offset line
+  for(let i=0;i<points.length-1;i++){
+    const A=points[i],B=points[i+1];
+    const bear=Math.atan2(B[1]-A[1],B[0]-A[0]);
+    const perp=bear+Math.PI/2;
+    const cosLat=Math.cos(A[0]*Math.PI/180);
+    const dLat=Math.cos(perp)*offsetM/111320;
+    const dLon=Math.sin(perp)*offsetM/(111320*cosLat);
+    segs.push({
+      ax:A[0]+dLat,ay:A[1]+dLon,
+      bx:B[0]+dLat,by:B[1]+dLon
+    });
+  }
+  // First point
+  result.push([segs[0].ax,segs[0].ay]);
+  // Interior intersections
+  for(let i=0;i<segs.length-1;i++){
+    const s1=segs[i],s2=segs[i+1];
+    const ix=lineIntersect(s1.ax,s1.ay,s1.bx,s1.by,s2.ax,s2.ay,s2.bx,s2.by);
+    if(ix)result.push(ix);
+    else result.push([s1.bx,s1.by]); // parallel, use endpoint
+  }
+  // Last point
+  result.push([segs[segs.length-1].bx,segs[segs.length-1].by]);
+  return result;
+}
+
+// Line-line intersection (parametric)
+function lineIntersect(x1,y1,x2,y2,x3,y3,x4,y4){
+  const d=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(Math.abs(d)<1e-12)return null;
+  const t=((x1-x3)*(y3-y4)-(y1-y3)*(x3-x4))/d;
+  return[x1+t*(x2-x1),y1+t*(y2-y1)];
+}
+
+function generateLinear(){
+  gridLyr.clearLayers();
+  if(pts.length<2){clrStats();return;}
+  const{d,alt,fW,fH}=getDroneCalc();
+  const spd=+document.getElementById('speed').value||5;
+  const ovf=+document.getElementById('lin-ovf').value/100;
+  const ovs=+document.getElementById('lin-ovs').value/100;
+  const nLines=+document.getElementById('lin-lines').value*2+3; // slider 0-4 → 3,5,7,9,11
+  const photoSpacing=fH*(1-ovf);
+  const stripSpacing=fW*(1-ovs);
+  const midIdx=Math.floor(nLines/2);
+
+  // Build parallel polylines using proper offset (no corner distortion)
+  const rawRows=[];
+  for(let li=0;li<nLines;li++){
+    const offset=(li-midIdx)*stripSpacing;
+    const offPoly=offsetPolyline(pts,offset); // correctly offset polyline
+    // Sample photo positions along this offset polyline
+    const row=[];
+    for(let si=0;si<offPoly.length-1;si++){
+      const A=offPoly[si],B=offPoly[si+1];
+      const segLen=hav(A[0],A[1],B[0],B[1]);
+      const n=Math.max(1,Math.ceil(segLen/photoSpacing));
+      for(let j=0;j<n;j++){
+        const t=j/n;
+        row.push([A[0]+t*(B[0]-A[0]),A[1]+t*(B[1]-A[1])]);
+      }
+    }
+    row.push([...offPoly[offPoly.length-1]]); // endpoint
+    rawRows.push(row);
+  }
+
+  // Boustrophedon: alternate direction
+  const rows=rawRows.map((row,i)=>i%2===1?[...row].reverse():row);
+
+  const allWps=buildWpList(rows,photoSpacing,alt,spd,0);
+  _wps=allWps;_area=null;
+
+  // Draw
+  L.polyline(pts,{color:'#f59e0b',weight:2,opacity:.6,dashArray:'8,4'}).addTo(gridLyr);
+  rows.forEach((row,ri)=>{
+    const offLine=rawRows[ri]; // draw in original order for the polyline
+    const col=ri===midIdx?'#16a34a':'#3b82f6';
+    L.polyline(ri%2===1?[...offLine].reverse():offLine,{color:col,weight:1.8,opacity:.85}).addTo(gridLyr);
+    row.forEach(w=>L.circleMarker(w,{radius:2.5,color:col,fillColor:col,fillOpacity:1,weight:1}).addTo(gridLyr));
+  });
+  // Transition lines between consecutive rows
+  for(let i=0;i<rows.length-1;i++){
+    const ep=rows[i][rows[i].length-1];
+    const sp=rows[i+1][0];
+    L.polyline([ep,sp],{color:'#94a3b8',weight:1.2,opacity:.6}).addTo(gridLyr);
+  }
+  if(allWps.length){
+    const sIc=L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#16a34a" stroke="white" stroke-width="2"/><text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">S</text></svg>`,iconSize:[22,22],iconAnchor:[11,11]});
+    L.marker([rows[0][0][0],rows[0][0][1]],{icon:sIc,zIndexOffset:300}).addTo(gridLyr).bindTooltip('Início');
+    const lastRow=rows[rows.length-1];
+    const eIc=L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#dc2626" stroke="white" stroke-width="2"/><text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">F</text></svg>`,iconSize:[22,22],iconAnchor:[11,11]});
+    L.marker([lastRow[lastRow.length-1][0],lastRow[lastRow.length-1][1]],{icon:eIc,zIndexOffset:300}).addTo(gridLyr).bindTooltip('Fim');
+  }
+  const photoCount=allWps.filter(w=>w.type==='photo').length;
+  const dist=calcDist(allWps);
+  const tMin=(dist/spd+photoCount*.3)/60;
+  const bats=Math.ceil(tMin/d.batMin);
+  const totalW=stripSpacing*(nLines-1);
+  const segLen=pts.reduce((a,p,i)=>i===0?0:a+hav(pts[i-1][0],pts[i-1][1],p[0],p[1]),0);
+  showStats({area:segLen*totalW/10000,lines:nLines,wps:allWps.length,dist,tMin,photos:photoCount,bats});
+  document.getElementById('btn-fit').disabled=false;
+  // NO auto-zoom
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE WAYPOINTS (manual) — uses wpData for per-WP settings
+// ═══════════════════════════════════════════════════════════
+function defaultWpData(){
+  return{
+    alt:+document.getElementById('altitude').value||60,
+    speed:+document.getElementById('speed').value||5,
+    gimbal:+document.getElementById('gimbal').value||-90,
+    action:'photo',    // none | photo | startVideo | stopVideo
+    turnMode:'pass'    // pass | stop
+  };
+}
+
+function generateWaypoints(){
+  gridLyr.clearLayers();
+  if(pts.length<2){clrStats();return;}
+  const{d,alt}=getDroneCalc();
+  const spd=+document.getElementById('speed').value||5;
+
+  // Ensure wpData has same length as pts
+  while(wpData.length<pts.length)wpData.push(defaultWpData());
+  while(wpData.length>pts.length)wpData.pop();
+
+  // Build WP list: gimbal setup 1m before pts[0], then each manual WP
+  const firstHead=pts.length>=2?Math.round(bearingTo(pts[0][0],pts[0][1],pts[1][0],pts[1][1])):0;
+  // Offset 1m backwards from pts[0] along the direction pts[0]->pts[1]
+  const _gDx=pts[0][0]-pts[1][0], _gDy=pts[0][1]-pts[1][1];
+  const _gLen=Math.hypot(_gDx,_gDy)||1e-9;
+  const allWps=[{
+    lat:pts[0][0]+_gDx/_gLen*ONE_METER_DEG,
+    lon:pts[0][1]+_gDy/_gLen*ONE_METER_DEG,
+    alt:wpData[0].alt,type:'gimbal',spd:2,heading:firstHead,action:'gimbal_only',gimbalAngle:wpData[0].gimbal
+  }];
+  pts.forEach((p,i)=>{
+    const wd=wpData[i];
+    const nextP=pts[i+1];
+    const hdg=nextP?Math.round(bearingTo(p[0],p[1],nextP[0],nextP[1])):
+              (i>0?Math.round(bearingTo(pts[i-1][0],pts[i-1][1],p[0],p[1])):0);
+    allWps.push({lat:p[0],lon:p[1],alt:wd.alt,type:'wp',spd:wd.speed,heading:hdg,action:wd.action,turnMode:wd.turnMode,gimbalAngle:wd.gimbal});
+  });
+
+  _wps=allWps;_area=null;
+
+  // Draw
+  L.polyline(pts,{color:'#7c3aed',weight:2.5,opacity:.85}).addTo(gridLyr);
+  pts.forEach((p,i)=>{
+    const wd=wpData[i];
+    const actionColor={photo:'#16a34a',startVideo:'#dc2626',stopVideo:'#dc2626',none:'#6b7280'}[wd.action]||'#6b7280';
+    const icon=L.divIcon({className:'',html:`<svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="white" stroke="${actionColor}" stroke-width="2.5"/><text x="13" y="17.5" text-anchor="middle" font-size="10" font-weight="600" fill="${actionColor}" font-family="Inter,sans-serif">${i+1}</text></svg>`,iconSize:[26,26],iconAnchor:[13,13]});
+    L.marker(p,{icon,zIndexOffset:100}).addTo(gridLyr).bindTooltip(`WP ${i+1} | ${actionLabels[wd.action]||wd.action}`);
+  });
+
+  const dist=calcDist(allWps);
+  const tMin=dist/spd/60;
+  const bats=Math.ceil(tMin/d.batMin);
+  showStats({area:0,lines:1,wps:allWps.length,dist,tMin,photos:allWps.filter(w=>w.action==='photo').length,bats});
+  document.getElementById('btn-fit').disabled=false;
+  renderWpCards();
+}
+
+// ═══════════════════════════════════════════════════════════
+// WAYPOINT CARDS UI
+// ═══════════════════════════════════════════════════════════
+const actionLabels={none:'Nenhuma',photo:'Foto',startVideo:'Iniciar Vídeo',stopVideo:'Parar Vídeo'};
+const turnLabels={pass:'Passagem (Pass)',stop:'Parar (Stop)'};
+
+function renderWpCards(){
+  const container=document.getElementById('wp-cards');
+  container.innerHTML='';
+  if(!pts.length){container.innerHTML='';return;}
+  while(wpData.length<pts.length)wpData.push(defaultWpData());
+
+  pts.forEach((p,i)=>{
+    const wd=wpData[i];
+    const card=document.createElement('div');
+    card.className='wp-card';
+    card.innerHTML=`
+      <div class="wp-card-header">
+        <span class="wp-card-title">WP #${i+1}</span>
+        <button class="wp-card-btn" title="Copiar para todos" onclick="copyWp(${i})" style="margin-right:2px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </button>
+        <button class="wp-card-btn del" title="Deletar waypoint" onclick="deleteWp(${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        </button>
+      </div>
+      <div class="wp-card-body">
+        <div class="wp-field">
+          <label>Alt (m)</label>
+          <input type="number" value="${wd.alt}" min="10" max="500" onchange="wpData[${i}].alt=+this.value;generateWaypoints()">
+        </div>
+        <div class="wp-field">
+          <label>Veloc. (m/s)</label>
+          <input type="number" value="${wd.speed}" min="1" max="15" step="0.5" onchange="wpData[${i}].speed=+this.value;generateWaypoints()">
+        </div>
+        <div class="wp-field">
+          <label>Gimbal Pitch (°)</label>
+          <input type="number" value="${wd.gimbal}" min="-90" max="0" step="1" onchange="wpData[${i}].gimbal=+this.value;generateWaypoints()">
+        </div>
+        <div class="wp-field">
+          <label>Ação</label>
+          <select onchange="wpData[${i}].action=this.value;generateWaypoints()">
+            ${Object.entries(actionLabels).map(([v,l])=>`<option value="${v}"${wd.action===v?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="wp-field full">
+          <label>Modo de Curva</label>
+          <select onchange="wpData[${i}].turnMode=this.value;generateWaypoints()">
+            ${Object.entries(turnLabels).map(([v,l])=>`<option value="${v}"${wd.turnMode===v?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function deleteWp(i){
+  if(pts.length<=2){toast('Mínimo de 2 waypoints','error');return;}
+  pts.splice(i,1);wpData.splice(i,1);
+  redraw();generateWaypoints();
+}
+
+function copyWp(i){
+  clipboardWp={...wpData[i]};
+  // Apply to all other WPs
+  wpData=wpData.map((_,j)=>j===i?wpData[j]:{...clipboardWp});
+  toast(`Configurações do WP ${i+1} aplicadas a todos`,'success');
+  generateWaypoints();
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE ORBIT
+// ═══════════════════════════════════════════════════════════
+function generateOrbit(){
+  gridLyr.clearLayers();
+  if(!orbitCenter){clrStats();return;}
+  const{d,alt,fW}=getDroneCalc();
+  const spd=+document.getElementById('speed').value||5;
+  const radius=+document.getElementById('orb-r').value||30;
+  const ovs=+document.getElementById('orb-ovs').value/100;
+  const startDeg=+document.getElementById('orb-start').value||0;
+  const circumference=2*Math.PI*radius;
+  const photoSpacing=fW*(1-ovs);
+  const nPts=Math.max(4,Math.ceil(circumference/photoSpacing));
+
+  let cPts=buildCircle(orbitCenter[0],orbitCenter[1],radius,nPts,startDeg);
+  if(orbitDir==='ccw')cPts.reverse();
+  // DO NOT close the circle — last WP already took its photo
+
+  const firstPt=cPts[0];
+  const secondPt=cPts[1]||cPts[0];
+  const firstHdg=Math.round(bearingTo(firstPt[0],firstPt[1],orbitCenter[0],orbitCenter[1]));
+
+  // Orbit builder: WP0 = first circle point = gimbal setup WP
+  // No separate offset WP needed; orbit builder handles WP0 as gimbalRotate+hover
+  const allWps=[];
+  cPts.forEach((p,pi)=>{
+    const hdg=Math.round(bearingTo(p[0],p[1],orbitCenter[0],orbitCenter[1]));
+    allWps.push({lat:p[0],lon:p[1],alt,type:pi===0?'gimbal':'photo',spd,heading:hdg,
+      action:pi===0?'gimbal_only':'photo',isOrbit:true,
+      gimbalAngle:+document.getElementById('gimbal').value||-90});
+  });
+  _wps=allWps;_area=null;
+
+  // Draw: circle outline (no closing line) — BLUE
+  L.circle(orbitCenter,{radius,color:'#1a6fde',weight:1.5,fillColor:'#1a6fde',fillOpacity:.04}).addTo(gridLyr);
+  L.polyline(cPts,{color:'#1a6fde',weight:2,opacity:.9}).addTo(gridLyr);
+  cPts.forEach((p,i)=>{
+    const isStart=i===0, isEnd=i===cPts.length-1;
+    const fill=isStart?'#16a34a':isEnd?'#dc2626':'white';
+    const label=isStart?'S':isEnd?'E':'';
+    const ic=L.divIcon({className:'',html:`<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="${fill}" stroke="#1a6fde" stroke-width="2"/>${label?`<text x="10" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">${label}</text>`:''}</svg>`,iconSize:[20,20],iconAnchor:[10,10]});
+    L.marker(p,{icon:ic,zIndexOffset:100}).addTo(gridLyr);
+  });
+  // Center marker — green C
+  const cIc=L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="#16a34a" stroke="white" stroke-width="2"/><text x="11" y="15.5" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Inter,sans-serif">C</text></svg>`,iconSize:[22,22],iconAnchor:[11,11]});
+  L.marker(orbitCenter,{icon:cIc,zIndexOffset:200}).addTo(gridLyr).bindTooltip('Centro');
+
+  const dist=circumference;
+  const tMin=(dist/spd+nPts*.3)/60;
+  const bats=Math.ceil(tMin/d.batMin);
+  showStats({area:Math.PI*radius*radius/10000,lines:1,wps:allWps.length,dist,tMin,photos:nPts,bats});
+  document.getElementById('btn-fit').disabled=false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TERRAIN — smooth canvas gradient clipped to drawn polygon + margin
+// ═══════════════════════════════════════════════════════════
+async function loadTerrain(){
+  terrainLyr.clearLayers();
+  document.getElementById('terrain-legend').style.display='none';
+  if(pts.length<3||!_wps||!_wps.length)return;
+  toast('Carregando elevação…','');
+
+  // Build expanded polygon if margin > 0
+  const mar=+document.getElementById('margin').value||0;
+  let clipPoly=pts;
+  if(mar>0&&mode==='grade'){
+    const ref2=pts[0];
+    const mp2=pts.map(p=>ll2m(p[0],p[1],ref2[0],ref2[1]));
+    const cx2=mp2.reduce((s,p)=>s+p[0],0)/mp2.length;
+    const cy2=mp2.reduce((s,p)=>s+p[1],0)/mp2.length;
+    const scaledMp=mp2.map(p=>{
+      const dx=p[0]-cx2,dy=p[1]-cy2;
+      const dist=Math.hypot(dx,dy)||1;
+      return[cx2+dx+dx/dist*mar, cy2+dy+dy/dist*mar];
+    });
+    clipPoly=scaledMp.map(p=>m2ll(p[0],p[1],ref2[0],ref2[1]));
+  }
+
+  // Sample points: vertices + grid inside bbox
+  const lats=clipPoly.map(p=>p[0]),lons=clipPoly.map(p=>p[1]);
+  const minLat=Math.min(...lats),maxLat=Math.max(...lats);
+  const minLon=Math.min(...lons),maxLon=Math.max(...lons);
+  const locations=[...clipPoly.map(p=>({lat:p[0],lon:p[1]}))];
+  const cLat=lats.reduce((s,v)=>s+v,0)/lats.length;
+  const cLon=lons.reduce((s,v)=>s+v,0)/lons.length;
+  locations.push({lat:cLat,lon:cLon});
+  const N=5;
+  for(let i=0;i<=N;i++)for(let j=0;j<=N;j++)
+    locations.push({lat:minLat+i*(maxLat-minLat)/N,lon:minLon+j*(maxLon-minLon)/N});
+
+  let elevs=null;
+  try{
+    const r=await fetch('https://api.open-elevation.com/api/v1/lookup',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({locations:locations.slice(0,100)})
+    });
+    if(r.ok){const dd=await r.json();elevs=dd.results.map(x=>x.elevation);}
+  }catch(e){}
+  if(!elevs)elevs=locations.map((_,i)=>800+Math.sin(i*.9)*25+Math.cos(i*.4)*18);
+
+  const allE=elevs.slice(0,locations.length);
+  const minE=Math.min(...allE),maxE=Math.max(...allE);
+  document.getElementById('leg-min').textContent=Math.round(minE)+'m';
+  document.getElementById('leg-max').textContent=Math.round(maxE)+'m';
+  // Legend bar: same gradient as colors used (blue→green→amber→red)
+  document.querySelector('#terrain-legend .legend-bar').style.background=
+    'linear-gradient(to right,#3b82f6 0%,#22c55e 33%,#f59e0b 66%,#ef4444 100%)';
+  document.getElementById('terrain-legend').style.display='block';
+
+  // Interpolate elevation at each WP using inverse-distance weighting from sample grid
+  function elevAtLL(lat,lon){
+    let wSum=0,eSum=0;
+    locations.forEach((s,i)=>{
+      if(i>=allE.length)return;
+      const dlat=(lat-s.lat)*111320, dlon=(lon-s.lon)*111320*Math.cos(lat*Math.PI/180);
+      const d2=dlat*dlat+dlon*dlon+1; // +1 avoids div/0
+      const w=1/d2;
+      wSum+=w; eSum+=w*allE[i];
+    });
+    return wSum?eSum/wSum:minE;
+  }
+
+  // Fetch takeoff reference elevation if set
+  let takeoffElev=minE;
+  if(takeoffRef){
+    let tRef=null;
+    try{
+      const tr=await fetch('https://api.open-elevation.com/api/v1/lookup',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({locations:[{lat:takeoffRef[0],lon:takeoffRef[1]}]})
+      });
+      if(tr.ok){const td=await tr.json();tRef=td.results[0].elevation;}
+    }catch(e){}
+    takeoffElev=tRef??elevAtLL(takeoffRef[0],takeoffRef[1]);
+  }
+
+  // Compute per-WP terrain elevation and store for KMZ export
+  _terrainElevs=_wps.map(w=>elevAtLL(w.lat,w.lon));
+  _terrainTakeoffElev=takeoffElev;
+
+  // Draw colored trajectory segments — each segment colored by midpoint elevation
+  const photoWpsOnly=_wps.filter(w=>w.type==='photo'||w.type==='wp');
+  for(let i=0;i<photoWpsOnly.length-1;i++){
+    const wA=photoWpsOnly[i], wB=photoWpsOnly[i+1];
+    const midLat=(wA.lat+wB.lat)/2, midLon=(wA.lon+wB.lon)/2;
+    const midElev=elevAtLL(midLat,midLon);
+    const t=maxE===minE?0.5:(midElev-minE)/(maxE-minE);
+    const col=elevColor(t);
+    L.polyline([[wA.lat,wA.lon],[wB.lat,wB.lon]],{
+      color:col,weight:3.5,opacity:0.92,interactive:false
+    }).addTo(terrainLyr);
+  }
+
+  toast(`Terreno: ${Math.round(minE)}–${Math.round(maxE)}m · Ref. decolagem: ${Math.round(takeoffElev)}m`,'success');
+}
+function elevColorRgba(t,alpha){
+  const stops=[[59,130,246],[34,197,94],[245,158,11],[239,68,68]];
+  const s=t*3,i=Math.min(2,Math.floor(s)),f=s-i;
+  const[r1,g1,b1]=stops[i],[r2,g2,b2]=stops[Math.min(3,i+1)];
+  return`rgba(${Math.round(r1+f*(r2-r1))},${Math.round(g1+f*(g2-g1))},${Math.round(b1+f*(b2-b1))},${alpha})`;
+}
+function elevColor(t){const s=elevColorRgba(t,1);return s.replace('rgba','rgb').replace(/,[\d.]+\)/,')');}
+function toggleTakeoffMode(){
+  takeoffMode=!takeoffMode;
+  const btn=document.getElementById('btn-takeoff-ref');
+  btn.classList.toggle('active',takeoffMode);
+  map.getContainer().style.cursor=takeoffMode?'crosshair':'';
+  if(takeoffMode)toast('Clique no mapa para marcar o ponto de decolagem','');
+}
+function renderTakeoffMarker(){
+  takeoffLyr.clearLayers();
+  if(!takeoffRef)return;
+  const ic=L.divIcon({className:'',html:`<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#f59e0b" stroke="white" stroke-width="2"/><path d="M14 20V13M14 13L10 17M14 13L18 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="10" x2="20" y2="10" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="10" y1="7" x2="18" y2="7" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,iconSize:[28,28],iconAnchor:[14,14]});
+  L.marker(takeoffRef,{icon:ic,zIndexOffset:300}).addTo(takeoffLyr).bindTooltip('Ponto de decolagem (ref. altitude)');
+}
+function toggleTerrain(){
+  const btn=document.getElementById('tgl-terrain');btn.classList.toggle('on');terrainOn=btn.classList.contains('on');
+  if(terrainOn){if(closed)loadTerrain();}
+  else{terrainLyr.clearLayers();document.getElementById('terrain-legend').style.display='none';}
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════
+function showStats({area,lines,wps,dist,tMin,photos,bats}){
+  document.getElementById('s-area').innerHTML=area.toFixed(2)+'<span class="su">ha</span>';
+  document.getElementById('s-lines').textContent=lines;
+  document.getElementById('s-wps').textContent=wps;
+  document.getElementById('s-dist').innerHTML=Math.round(dist)+'<span class="su">m</span>';
+  document.getElementById('s-time').innerHTML=tMin.toFixed(1)+'<span class="su">min</span>';
+  document.getElementById('s-bat').textContent=bats+(bats===1?' bat':' bats');
+  document.getElementById('s-photos').textContent=photos;
+  document.getElementById('btn-exp').disabled=false;
+  document.getElementById('btn-fit').disabled=false;
+}
+function clrStats(){
+  ['s-area','s-lines','s-wps','s-dist','s-time','s-bat','s-photos'].forEach(id=>document.getElementById(id).innerHTML='—');
+  document.getElementById('btn-exp').disabled=true;
+  document.getElementById('btn-fit').disabled=true;
+}
+function calcDist(wps){return wps.reduce((a,w,i)=>i===0?0:a+hav(wps[i-1].lat,wps[i-1].lon,w.lat,w.lon),0);}
+
+// ═══════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════
+function setMode(m){
+  mode=m;
+  ['grade','linear','orbita','waypoints'].forEach(id=>document.getElementById('tab-'+id).classList.toggle('active',id===m));
+  document.getElementById('grid-params').style.display=m==='grade'?'block':'none';
+  document.getElementById('linear-params').style.display=m==='linear'?'block':'none';
+  document.getElementById('orbit-params').style.display=m==='orbita'?'block':'none';
+  document.getElementById('wp-params').style.display=m==='waypoints'?'block':'none';
+  document.getElementById('tgl-double-row').style.display=m==='grade'?'flex':'none';
+  // Hide terrain row for orbit (no terrain following needed there)
+  document.getElementById('tgl-terrain-row').style.display=m==='orbita'?'none':'flex';
+  document.getElementById('terrain-legend').style.display=m==='orbita'?'none':(document.getElementById('terrain-legend').style.display);
+  // hide gimbal global section for waypoints (each WP has its own)
+  document.getElementById('gimbal-section').style.display=m==='waypoints'?'none':'block';
+  clearAll();setStatus();
+}
+function setTool(t){
+  tool=t;
+  ['draw','pan'].forEach(id=>{const e=document.getElementById('tool-'+id);if(e)e.classList.toggle('active',id===t);});
+  updateDrawCursor();
+}
+function setFinish(f){
+  finish=f;
+  document.getElementById('fin-rth').classList.toggle('active',f==='rth');
+  document.getElementById('fin-hover').classList.toggle('active',f==='hover');
+}
+function setODir(d){
+  orbitDir=d;
+  document.getElementById('orb-cw').classList.toggle('active',d==='cw');
+  document.getElementById('orb-ccw').classList.toggle('active',d==='ccw');
+  if(orbitCenter)generateOrbit();
+}
+function toggleOpt(id){document.getElementById(id).classList.toggle('on');updateCalc();}
+function updateDroneInfo(){
+  droneKey=document.getElementById('drone-sel').value;
+  const d=DRONES[droneKey];
+  const alt=+document.getElementById('altitude').value||60;
+  const gsd=(d.sH/d.fl)*alt*100/d.iH;
+  document.getElementById('gsd-input').value=gsd.toFixed(2);
+  updateCalc();
+}
+function updateDrone(){updateDroneInfo();}
+function updateCalc(){
+  if(!closed&&!orbitCenter)return;
+  if(mode==='grade')generateGrid();
+  else if(mode==='linear')generateLinear();
+  else if(mode==='orbita')generateOrbit();
+  else if(mode==='waypoints')generateWaypoints();
+}
+function setStatus(){
+  const el=document.getElementById('status-bar');
+  if(mode==='orbita'){el.textContent=orbitCenter?'Centro definido — ajuste parâmetros':'Clique no mapa para definir o centro';return;}
+  if(mode==='linear'){
+    if(!pts.length)el.textContent='Clique no mapa para adicionar pontos';
+    else if(closed)el.textContent=`Corredor gerado — ${pts.length} pontos`;
+    else el.textContent=`${pts.length} ponto(s) — DUPLO CLIQUE para finalizar`;
+    return;
+  }
+  if(mode==='waypoints'){
+    if(!pts.length)el.textContent='Clique no mapa para adicionar waypoints';
+    else if(closed)el.textContent=`Rota com ${pts.length} waypoints`;
+    else el.textContent=`${pts.length} WP(s) — DUPLO CLIQUE para finalizar`;
+    return;
+  }
+  if(!pts.length)el.textContent='Clique no mapa para adicionar pontos';
+  else if(closed)el.textContent=`Polígono fechado — ${pts.length} vértices`;
+  else el.textContent=`${pts.length} ponto(s) — clique no ● inicial ou DUPLO CLIQUE para fechar`;
+}
+function clearAll(){
+  if(pendingClick){clearTimeout(pendingClick);pendingClick=null;}
+  pts=[];closed=false;prevLine=null;nearSnap=false;orbitCenter=null;startVertexIdx=0;
+  wpData=[];clipboardWp=null;
+  drawLyr.clearLayers();gridLyr.clearLayers();terrainLyr.clearLayers();takeoffLyr.clearLayers();
+  document.getElementById('snap-hint').classList.remove('show');
+  document.getElementById('terrain-legend').style.display='none';
+  document.getElementById('wp-cards').innerHTML='';
+  _wps=null;_terrainElevs=null;_terrainTakeoffElev=null;clrStats();document.getElementById('btn-fit').disabled=true;setStatus();
+}
+function fitView(){
+  if(orbitCenter){map.fitBounds(L.latLng(orbitCenter).toBounds((+document.getElementById('orb-r').value||30)*3));return;}
+  if(pts.length)map.fitBounds(L.latLngBounds(pts),{padding:[50,50]});
+}
+function locateUser(){map.locate({setView:true,maxZoom:17});}
+async function doSearch(){
+  const q=document.getElementById('search-inp').value.trim();if(!q)return;
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
+  const dd=await r.json();if(dd.length)map.setView([+dd[0].lat,+dd[0].lon],16);else toast('Não encontrado','error');}
+  catch{toast('Erro na busca','error');}
+}
+function loadDemo(){
+  clearAll();
+  if(mode==='orbita'){orbitCenter=[-21.170,-47.810];map.setView(orbitCenter,17);drawOrbitPreview();generateOrbit();}
+  else if(mode==='linear'){pts=[[-21.170,-47.816],[-21.171,-47.812],[-21.170,-47.808],[-21.169,-47.804]];closed=true;redraw();generateLinear();fitView();}
+  else if(mode==='waypoints'){pts=[[-21.170,-47.815],[-21.172,-47.812],[-21.170,-47.808],[-21.168,-47.810]];wpData=pts.map(()=>defaultWpData());closed=true;redraw();generateWaypoints();}
+  else{const c=[-21.170,-47.810],s=.0028;pts=[[c[0]-s,c[1]-s*1.3],[c[0]-s,c[1]+s*1.3],[c[0]+s,c[1]+s*1.3],[c[0]+s,c[1]-s*1.3]];closed=true;map.setView(c,16);redraw();generateGrid();if(terrainOn)loadTerrain();}
+  setStatus();toast('Demo carregada!','success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// KMZ IMPORT
+// ═══════════════════════════════════════════════════════════
+function importKMZ(){document.getElementById('file-imp').click();}
+async function handleImport(event){
+  const file=event.target.files[0];if(!file)return;event.target.value='';
+  let kmlText='';
+  try{
+    if(file.name.endsWith('.kmz')){
+      const zip=await JSZip.loadAsync(file);
+      const kf=Object.keys(zip.files).find(n=>n.endsWith('.kml'));
+      if(!kf){toast('Nenhum KML no KMZ','error');return;}
+      kmlText=await zip.files[kf].async('text');
+    }else kmlText=await file.text();
+  }catch(e){toast('Erro ao ler arquivo','error');return;}
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(kmlText,'text/xml');
+  let coordStr='';
+  const poly=doc.querySelector('Polygon outerBoundaryIs LinearRing coordinates');
+  if(poly)coordStr=poly.textContent;
+  else{const ls=doc.querySelector('LineString coordinates');if(ls)coordStr=ls.textContent;}
+  if(!coordStr.trim()){toast('Nenhum polígono encontrado','error');return;}
+  const ip=coordStr.trim().split(/\s+/).map(c=>{const[lon,lat]=c.split(',').map(Number);return[lat,lon];}).filter(p=>!isNaN(p[0])&&!isNaN(p[1]));
+  if(ip.length<3){toast('Polígono insuficiente','error');return;}
+  clearAll();pts=ip.slice(0,-1);closed=true;
+  map.fitBounds(L.latLngBounds(pts),{padding:[50,50]});redraw();
+  if(mode==='grade')generateGrid();else if(mode==='linear')generateLinear();
+  if(terrainOn)loadTerrain();setStatus();
+  toast(`Área importada: ${pts.length} vértices`,'success');
+}
+
+// ═══════════════════════════════════════════════════════════
+// KMZ EXPORT — format matched exactly to DJI reference KMZ
+// ═══════════════════════════════════════════════════════════
+async function exportKMZ(){
+  if(!_wps||!_wps.length){toast('Gere uma missão primeiro','error');return;}
+  const gimGlobal=+document.getElementById('gimbal').value;
+  const spd=Math.min(+document.getElementById('speed').value||5,15);
+  const ts=Date.now();
+
+  const templateKml=mode==='orbita'?buildOrbitTemplate(spd,ts):buildTemplateKml(spd,ts);
+  const waylinesWpml=mode==='orbita'
+    ?buildOrbitWaylines(_wps,gimGlobal,spd,ts)
+    :buildWaylinesWpml(_wps,gimGlobal,spd,ts);
+
+  const zip=new JSZip();
+  zip.file('wpmz/template.kml',templateKml);
+  zip.file('wpmz/waylines.wpml',waylinesWpml);
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`missao_${mode}_${DRONES[droneKey].name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.kmz`;
+  a.click();URL.revokeObjectURL(a.href);
+  toast('KMZ exportado! Importe no DJI Fly / Pilot 2','success');
+}
+
+// template.kml — full mission config with waypoints (matches DJI reference exactly)
+function buildTemplateKml(spd,ts){
+  const d=DRONES[droneKey];
+  const finAct=finish==='rth'?'goHome':'hover';
+  const gimGlobal=+document.getElementById('gimbal').value;
+
+  // Build simple Placemark list for template.kml (no actions, just coordinates + turn params)
+  let tIdx=0;
+  const tpXml=(_wps||[]).map((w)=>{
+    const isLast=tIdx===(_wps.length-1);
+    // Manual WPs: useGlobalTurnParam=0 so per-WP turn is respected
+    const isManualWp=(w.type==='wp');
+    const tplTurnMode=(w.type==='wp'&&w.turnMode==='pass')
+      ?'toPointAndPassWithContinuityCurvature'
+      :'toPointAndStopWithContinuityCurvature';
+    const pm=`<Placemark><Point><coordinates>${w.lon.toFixed(10)},${w.lat.toFixed(10)}</coordinates></Point><wpml:index>${tIdx}</wpml:index><wpml:executeHeight>${(w.alt||60).toFixed(1)}</wpml:executeHeight><wpml:waypointSpeed>${spd}</wpml:waypointSpeed><wpml:waypointHeadingParam><wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode><wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle><wpml:waypointHeadingAngleEnable>0</wpml:waypointHeadingAngleEnable></wpml:waypointHeadingParam><wpml:useGlobalTurnParam>0</wpml:useGlobalTurnParam><wpml:waypointTurnParam><wpml:waypointTurnMode>${tplTurnMode}</wpml:waypointTurnMode><wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist></wpml:waypointTurnParam></Placemark>`;
+    tIdx++;return pm;
+  }).join('');
+
+  const firstWp=_wps&&_wps.length?_wps[0]:null;
+  const takeoffH=firstWp?(firstWp.alt||60):50;
+
+  return`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.uav.com/wpmz/1.0.2"><Document><wpml:createTime>${ts}</wpml:createTime><wpml:updateTime>${ts}</wpml:updateTime><wpml:missionConfig><wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode><wpml:finishAction>${finAct}</wpml:finishAction><wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost><wpml:executeRCLostAction>goBack</wpml:executeRCLostAction><wpml:takeOffSecurityHeight>${takeoffH}</wpml:takeOffSecurityHeight><wpml:globalTransitionalSpeed>${spd}</wpml:globalTransitionalSpeed><wpml:droneInfo><wpml:droneEnumValue>${d.dEnum}</wpml:droneEnumValue><wpml:droneSubEnumValue>${d.dSub}</wpml:droneSubEnumValue></wpml:droneInfo><wpml:payloadInfo><wpml:payloadEnumValue>${d.pEnum}</wpml:payloadEnumValue><wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:payloadInfo></wpml:missionConfig><Folder><wpml:templateType>waypoint</wpml:templateType><wpml:templateId>0</wpml:templateId><wpml:autoFlightSpeed>${spd}</wpml:autoFlightSpeed><wpml:waylineCoordinateSysParam><wpml:coordinateMode>WGS84</wpml:coordinateMode><wpml:heightMode>relativeToStartPoint</wpml:heightMode><wpml:positioningType>GPS</wpml:positioningType></wpml:waylineCoordinateSysParam><wpml:globalHeight>${(firstWp?firstWp.alt:60).toFixed(1)}</wpml:globalHeight><wpml:caliFlightEnable>0</wpml:caliFlightEnable><wpml:gimbalPitchMode>usePointSetting</wpml:gimbalPitchMode><wpml:globalWaypointHeadingParam><wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode><wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle><wpml:waypointPoiPoint>0.000,0.0000,0.000</wpml:waypointPoiPoint><wpml:waypointHeadingAngleEnable>0</wpml:waypointHeadingAngleEnable></wpml:globalWaypointHeadingParam><wpml:globalWaypointTurnMode>toPointAndStopWithContinuityCurvature</wpml:globalWaypointTurnMode><wpml:globalUseStraightLine>0</wpml:globalUseStraightLine>${tpXml}</Folder></Document></kml>`;
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ORBIT TEMPLATE.KML — matches reference KMZ structure exactly
+// ═══════════════════════════════════════════════════════════
+function buildOrbitTemplate(spd,ts){
+  const d=DRONES[droneKey];
+  const finAct=finish==='rth'?'goHome':'hover';
+  const firstWp=_wps&&_wps.length?_wps[0]:null;
+  const takeoffH=firstWp?(firstWp.alt||60):50;
+  const tpXml=(_wps||[]).map((w,wi)=>{
+    const isFirst=wi===0,isLast=wi===(_wps.length-1);
+    const turnMode=isFirst||isLast?'toPointAndStopWithContinuityCurvature':'toPointAndPassWithContinuityCurvature';
+    return`<Placemark><Point><coordinates>${w.lon.toFixed(11)},${w.lat.toFixed(11)}</coordinates></Point><wpml:index>${wi}</wpml:index><wpml:height>${(w.alt||60).toFixed(1)}</wpml:height><wpml:useGlobalSpeed>1</wpml:useGlobalSpeed><wpml:useGlobalHeadingParam>0</wpml:useGlobalHeadingParam><wpml:useGlobalTurnParam>0</wpml:useGlobalTurnParam><wpml:waypointTurnParam><wpml:waypointTurnMode>${turnMode}</wpml:waypointTurnMode><wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist></wpml:waypointTurnParam><wpml:useStraightLine>0</wpml:useStraightLine></Placemark>`;
+  }).join('');
+  return`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.uav.com/wpmz/1.0.2"><Document><wpml:createTime>${ts}</wpml:createTime><wpml:updateTime>${ts}</wpml:updateTime><wpml:missionConfig><wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode><wpml:finishAction>${finAct}</wpml:finishAction><wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost><wpml:executeRCLostAction>goHome</wpml:executeRCLostAction><wpml:takeOffSecurityHeight>${takeoffH}</wpml:takeOffSecurityHeight><wpml:globalTransitionalSpeed>${spd}</wpml:globalTransitionalSpeed><wpml:droneInfo><wpml:droneEnumValue>${d.dEnum}</wpml:droneEnumValue><wpml:droneSubEnumValue>${d.dSub||0}</wpml:droneSubEnumValue></wpml:droneInfo><wpml:payloadInfo><wpml:payloadEnumValue>${d.pEnum}</wpml:payloadEnumValue><wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:payloadInfo></wpml:missionConfig><Folder><wpml:templateType>waypoint</wpml:templateType><wpml:templateId>0</wpml:templateId><wpml:autoFlightSpeed>${spd}</wpml:autoFlightSpeed><wpml:waylineCoordinateSysParam><wpml:coordinateMode>WGS84</wpml:coordinateMode><wpml:heightMode>relativeToStartPoint</wpml:heightMode><wpml:positioningType>GPS</wpml:positioningType></wpml:waylineCoordinateSysParam><wpml:globalHeight>${takeoffH.toFixed(1)}</wpml:globalHeight><wpml:caliFlightEnable>0</wpml:caliFlightEnable><wpml:gimbalPitchMode>usePointSetting</wpml:gimbalPitchMode><wpml:globalWaypointHeadingParam><wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode><wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode></wpml:globalWaypointHeadingParam><wpml:globalWaypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:globalWaypointTurnMode><wpml:globalUseStraightLine>0</wpml:globalUseStraightLine>${tpXml}</Folder></Document></kml>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ORBIT WAYLINES — exact structure matching working reference KMZ
+// uav.com namespace, smoothTransition per-WP heading,
+// hover+takePhoto in sequence, waypointGimbalHeadingParam per WP
+// ═══════════════════════════════════════════════════════════
+function buildOrbitWaylines(wps,gimGlobal,missionSpd,ts){
+  const d=DRONES[droneKey];
+  const finAct=finish==='rth'?'goHome':'hover';
+  let agId=0;
+
+  const wpXml=wps.map((w,wi)=>{
+    const gimAngle=w.gimbalAngle??gimGlobal;
+    const hdg=(w.heading||0).toFixed(1);
+    const isFirst=(wi===0);
+    const isLast=(wi===wps.length-1);
+    const turnMode=isFirst||isLast
+      ?'toPointAndStopWithContinuityCurvature'
+      :'toPointAndPassWithContinuityCurvature';
+
+    let actions='';
+    if(isFirst){
+      actions=`<wpml:action>
+            <wpml:actionId>1</wpml:actionId>
+            <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:gimbalHeadingYawBase>aircraft</wpml:gimbalHeadingYawBase>
+              <wpml:gimbalRotateMode>absoluteAngle</wpml:gimbalRotateMode>
+              <wpml:gimbalPitchRotateEnable>1</wpml:gimbalPitchRotateEnable>
+              <wpml:gimbalPitchRotateAngle>${gimAngle}</wpml:gimbalPitchRotateAngle>
+              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>
+          <wpml:action>
+            <wpml:actionId>2</wpml:actionId>
+            <wpml:actionActuatorFunc>hover</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:hoverTime>5.0</wpml:hoverTime>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>`;
+    } else {
+      actions=`<wpml:action>
+            <wpml:actionId>1</wpml:actionId>
+            <wpml:actionActuatorFunc>hover</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:hoverTime>0.5</wpml:hoverTime>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>
+          <wpml:action>
+            <wpml:actionId>2</wpml:actionId>
+            <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>`;
+    }
+
+    return`      <Placemark>
+        <Point>
+          <coordinates>${w.lon.toFixed(11)},${w.lat.toFixed(11)}</coordinates>
+        </Point>
+        <wpml:index>${wi}</wpml:index>
+        <wpml:executeHeight>${(w.alt||60).toFixed(1)}</wpml:executeHeight>
+        <wpml:waypointSpeed>${missionSpd}</wpml:waypointSpeed>
+        <wpml:waypointHeadingParam>
+          <wpml:waypointHeadingMode>smoothTransition</wpml:waypointHeadingMode>
+          <wpml:waypointHeadingAngle>${hdg}</wpml:waypointHeadingAngle>
+          <wpml:waypointHeadingAngleEnable>1</wpml:waypointHeadingAngleEnable>
+        </wpml:waypointHeadingParam>
+        <wpml:useGlobalTurnParam>0</wpml:useGlobalTurnParam>
+        <wpml:waypointTurnParam>
+          <wpml:waypointTurnMode>${turnMode}</wpml:waypointTurnMode>
+          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
+        </wpml:waypointTurnParam>
+        <wpml:waypointGimbalHeadingParam>
+          <wpml:waypointGimbalPitchAngle>${gimAngle}</wpml:waypointGimbalPitchAngle>
+        </wpml:waypointGimbalHeadingParam>
+        <wpml:actionGroup>
+          <wpml:actionGroupId>${agId++}</wpml:actionGroupId>
+          <wpml:actionGroupStartIndex>${wi}</wpml:actionGroupStartIndex>
+          <wpml:actionGroupEndIndex>${wi}</wpml:actionGroupEndIndex>
+          <wpml:actionGroupMode>sequence</wpml:actionGroupMode>
+          <wpml:actionTrigger>
+            <wpml:actionTriggerType>reachPoint</wpml:actionTriggerType>
+          </wpml:actionTrigger>
+          ${actions}
+        </wpml:actionGroup>
+      </Placemark>`;
+  }).join('\n');
+
+  const takeoffH=wps[0]?.alt||60;
+  return`<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.uav.com/wpmz/1.0.2">
+  <Document>
+    <wpml:author>DJI Mapper Pro</wpml:author>
+    <wpml:createTime>${ts}</wpml:createTime>
+    <wpml:updateTime>${ts}</wpml:updateTime>
+    <wpml:missionConfig>
+      <wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode>
+      <wpml:finishAction>${finAct}</wpml:finishAction>
+      <wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost>
+      <wpml:executeRCLostAction>goHome</wpml:executeRCLostAction>
+      <wpml:globalTransitionalSpeed>${missionSpd}</wpml:globalTransitionalSpeed>
+      <wpml:useGlobalTransitionalSpeed>1</wpml:useGlobalTransitionalSpeed>
+      <wpml:droneInfo>
+        <wpml:droneEnumValue>${d.dEnum}</wpml:droneEnumValue>
+        <wpml:droneSubEnumValue>${d.dSub||0}</wpml:droneSubEnumValue>
+      </wpml:droneInfo>
+      <wpml:payloadInfo>
+        <wpml:payloadEnumValue>${d.pEnum}</wpml:payloadEnumValue>
+        <wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue>
+        <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+      </wpml:payloadInfo>
+    </wpml:missionConfig>
+    <Folder>
+      <wpml:templateType>waypoint</wpml:templateType>
+      <wpml:templateId>0</wpml:templateId>
+      <wpml:waylineCoordinateSysParam>
+        <wpml:coordinateMode>WGS84</wpml:coordinateMode>
+        <wpml:heightMode>relativeToStartPoint</wpml:heightMode>
+        <wpml:positioningType>GPS</wpml:positioningType>
+      </wpml:waylineCoordinateSysParam>
+      <wpml:autoFlightSpeed>${missionSpd}</wpml:autoFlightSpeed>
+      <wpml:gimbalPitchMode>usePointSetting</wpml:gimbalPitchMode>
+      <wpml:globalWaypointHeadingParam>
+        <wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode>
+        <wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode>
+      </wpml:globalWaypointHeadingParam>
+      <wpml:globalWaypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:globalWaypointTurnMode>
+      <wpml:globalUseStraightLine>0</wpml:globalUseStraightLine>
+      <wpml:waylineId>0</wpml:waylineId>
+${wpXml}
+    </Folder>
+  </Document>
+</kml>`;
+}
+
+// waylines.wpml — full waypoints matching DJI reference structure exactly
+function buildWaylinesWpml(wps,gimGlobal,missionSpd,ts){
+  const d=DRONES[droneKey];
+  const finAct=finish==='rth'?'goHome':'hover';
+  let idx=0;
+  let globalActionId=0;
+
+  const wpXml=wps.map((w,wi)=>{
+    const isGimbalWp = w.type==='gimbal';
+    const isOrbit    = !!w.isOrbit;
+    const isManualWp = w.type==='wp';
+    const wpSpd      = missionSpd;
+    const gimAngle   = w.gimbalAngle??gimGlobal;
+    // Terrain-following: adjust altitude by (wpElev - takeoffElev)
+    const terrainOffset=(terrainOn&&_terrainElevs&&_terrainElevs[wi]!=null&&_terrainTakeoffElev!=null)
+      ?(_terrainElevs[wi]-_terrainTakeoffElev):0;
+    const wpAlt=(w.alt||60)+terrainOffset;
+
+    // Heading: orbit WPs use smoothTransition toward center; others followWayline
+    const headingMode  = isOrbit ? 'smoothTransition' : 'followWayline';
+    const headingAngle = isOrbit ? w.heading : 0;
+    const headingAngleEnable = isOrbit ? 1 : 0;
+
+    // Turn mode: pass=PassWithContinuity, stop/default=StopWithContinuity
+    const turnMode = (w.turnMode==='pass')
+      ? 'toPointAndPassWithContinuityCurvature'
+      : 'toPointAndStopWithContinuityCurvature';
+    const dampDist = 0;
+
+    // waypointGimbalHeadingParam on every WP (matches reference KMZ)
+    const gimbalHdg = `<wpml:waypointGimbalHeadingParam><wpml:waypointGimbalPitchAngle>${gimAngle}</wpml:waypointGimbalPitchAngle></wpml:waypointGimbalHeadingParam>`;
+
+    let actionGroupsXml = '';
+    const ag0 = globalActionId++;
+
+    if(isGimbalWp){
+      // WP0: gimbalRotate absoluteAngle + hover(5s) in sequence — matches reference
+      actionGroupsXml = `<wpml:actionGroup><wpml:actionGroupId>${ag0}</wpml:actionGroupId><wpml:actionGroupStartIndex>${idx}</wpml:actionGroupStartIndex><wpml:actionGroupEndIndex>${idx}</wpml:actionGroupEndIndex><wpml:actionGroupMode>sequence</wpml:actionGroupMode><wpml:actionTrigger><wpml:actionTriggerType>reachPoint</wpml:actionTriggerType></wpml:actionTrigger><wpml:action><wpml:actionId>1</wpml:actionId><wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:gimbalHeadingYawBase>aircraft</wpml:gimbalHeadingYawBase><wpml:gimbalRotateMode>absoluteAngle</wpml:gimbalRotateMode><wpml:gimbalPitchRotateEnable>1</wpml:gimbalPitchRotateEnable><wpml:gimbalPitchRotateAngle>${gimAngle}</wpml:gimbalPitchRotateAngle><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:actionActuatorFuncParam></wpml:action><wpml:action><wpml:actionId>2</wpml:actionId><wpml:actionActuatorFunc>hover</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:hoverTime>5.0</wpml:hoverTime></wpml:actionActuatorFuncParam></wpml:action></wpml:actionGroup>`;
+    } else if(w.action==='photo'){
+      // Photo WPs: hover(0.5s) + takePhoto in sequence — matches reference
+      // Stop mode manual WPs: hover 1s to ensure drone is fully stopped
+      const hoverTime = (isManualWp && w.turnMode==='stop') ? 1.0 : 0.5;
+      actionGroupsXml = `<wpml:actionGroup><wpml:actionGroupId>${ag0}</wpml:actionGroupId><wpml:actionGroupStartIndex>${idx}</wpml:actionGroupStartIndex><wpml:actionGroupEndIndex>${idx}</wpml:actionGroupEndIndex><wpml:actionGroupMode>sequence</wpml:actionGroupMode><wpml:actionTrigger><wpml:actionTriggerType>reachPoint</wpml:actionTriggerType></wpml:actionTrigger><wpml:action><wpml:actionId>1</wpml:actionId><wpml:actionActuatorFunc>hover</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:hoverTime>${hoverTime}</wpml:hoverTime></wpml:actionActuatorFuncParam></wpml:action><wpml:action><wpml:actionId>2</wpml:actionId><wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:actionActuatorFuncParam></wpml:action></wpml:actionGroup>`;
+    } else if(w.action==='startVideo'){
+      actionGroupsXml = `<wpml:actionGroup><wpml:actionGroupId>${ag0}</wpml:actionGroupId><wpml:actionGroupStartIndex>${idx}</wpml:actionGroupStartIndex><wpml:actionGroupEndIndex>${idx}</wpml:actionGroupEndIndex><wpml:actionGroupMode>sequence</wpml:actionGroupMode><wpml:actionTrigger><wpml:actionTriggerType>reachPoint</wpml:actionTriggerType></wpml:actionTrigger><wpml:action><wpml:actionId>1</wpml:actionId><wpml:actionActuatorFunc>startRecord</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:actionActuatorFuncParam></wpml:action></wpml:actionGroup>`;
+    } else if(w.action==='stopVideo'){
+      actionGroupsXml = `<wpml:actionGroup><wpml:actionGroupId>${ag0}</wpml:actionGroupId><wpml:actionGroupStartIndex>${idx}</wpml:actionGroupStartIndex><wpml:actionGroupEndIndex>${idx}</wpml:actionGroupEndIndex><wpml:actionGroupMode>sequence</wpml:actionGroupMode><wpml:actionTrigger><wpml:actionTriggerType>reachPoint</wpml:actionTriggerType></wpml:actionTrigger><wpml:action><wpml:actionId>1</wpml:actionId><wpml:actionActuatorFunc>stopRecord</wpml:actionActuatorFunc><wpml:actionActuatorFuncParam><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:actionActuatorFuncParam></wpml:action></wpml:actionGroup>`;
+    } else {
+      // tech/none WPs: no actions, undo the increment
+      globalActionId--;
+    }
+
+    const pm=`<Placemark><Point><coordinates>${w.lon.toFixed(10)},${w.lat.toFixed(10)}</coordinates></Point><wpml:index>${idx}</wpml:index><wpml:executeHeight>${wpAlt.toFixed(1)}</wpml:executeHeight><wpml:waypointSpeed>${wpSpd.toFixed(2)}</wpml:waypointSpeed><wpml:waypointHeadingParam><wpml:waypointHeadingMode>${headingMode}</wpml:waypointHeadingMode><wpml:waypointHeadingAngle>${headingAngle}</wpml:waypointHeadingAngle><wpml:waypointHeadingAngleEnable>${headingAngleEnable}</wpml:waypointHeadingAngleEnable></wpml:waypointHeadingParam><wpml:useGlobalTurnParam>0</wpml:useGlobalTurnParam><wpml:waypointTurnParam><wpml:waypointTurnMode>${turnMode}</wpml:waypointTurnMode><wpml:waypointTurnDampingDist>${dampDist}</wpml:waypointTurnDampingDist></wpml:waypointTurnParam>${gimbalHdg}${actionGroupsXml}</Placemark>`;
+    idx++;return pm;
+  }).join('');
+
+  const firstWp=wps&&wps.length?wps[0]:null;
+  const takeoffH=firstWp?(firstWp.alt||60):50;
+  let dist=0;
+  for(let i=1;i<wps.length;i++){
+    const dx=(wps[i].lon-wps[i-1].lon)*111320*Math.cos(wps[i].lat*Math.PI/180);
+    const dy=(wps[i].lat-wps[i-1].lat)*111320;
+    dist+=Math.sqrt(dx*dx+dy*dy);
+  }
+  const dur=(dist/missionSpd).toFixed(3);
+
+  return`<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.uav.com/wpmz/1.0.2"><Document><wpml:missionConfig><wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode><wpml:finishAction>${finAct}</wpml:finishAction><wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost><wpml:executeRCLostAction>goBack</wpml:executeRCLostAction><wpml:takeOffSecurityHeight>${takeoffH}</wpml:takeOffSecurityHeight><wpml:globalTransitionalSpeed>${missionSpd}</wpml:globalTransitionalSpeed><wpml:droneInfo><wpml:droneEnumValue>${d.dEnum}</wpml:droneEnumValue><wpml:droneSubEnumValue>${d.dSub}</wpml:droneSubEnumValue></wpml:droneInfo><wpml:payloadInfo><wpml:payloadEnumValue>${d.pEnum}</wpml:payloadEnumValue><wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue><wpml:payloadPositionIndex>0</wpml:payloadPositionIndex></wpml:payloadInfo></wpml:missionConfig><Folder><wpml:templateId>0</wpml:templateId><wpml:executeHeightMode>relativeToStartPoint</wpml:executeHeightMode><wpml:waylineId>0</wpml:waylineId><wpml:autoFlightSpeed>${missionSpd}</wpml:autoFlightSpeed><wpml:distance>${dist.toFixed(10)}</wpml:distance><wpml:duration>${dur}</wpml:duration>${wpXml}</Folder></Document></kml>`;
+}
+
+let _tt;
+function toast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.className='',3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// MATH UTILS
+// ═══════════════════════════════════════════════════════════
+function ll2m(la,lo,rla,rlo){const R=6371000;return[(lo-rlo)*Math.PI/180*R*Math.cos(rla*Math.PI/180),(la-rla)*Math.PI/180*R];}
+function m2ll(x,y,rla,rlo){const R=6371000;return[rla+y*180/(Math.PI*R),rlo+x*180/(Math.PI*R*Math.cos(rla*Math.PI/180))];}
+function rot(x,y,a){return[x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];}
+function hav(a,b,c,d){const R=6371000,dL=(c-a)*Math.PI/180,dO=(d-b)*Math.PI/180,q=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dO/2)**2;return R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));}
+function buildCircle(lat,lon,r,n,startDeg=0){
+  const R=6371000,ps=[];
+  for(let i=0;i<n;i++){
+    const a=(2*Math.PI*i/n)+(startDeg*Math.PI/180)-Math.PI/2;
+    const dLat=(r*Math.cos(a))/R,dLon=(r*Math.sin(a))/(R*Math.cos(lat*Math.PI/180));
+    ps.push([lat+dLat*180/Math.PI,lon+dLon*180/Math.PI]);
+  }
+  return ps;
+}
+function bearingTo(fLat,fLon,tLat,tLon){
+  const f1=fLat*Math.PI/180,f2=tLat*Math.PI/180,dl=(tLon-fLon)*Math.PI/180;
+  const x=Math.sin(dl)*Math.cos(f2),y=Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl);
+  return((Math.atan2(x,y)*180/Math.PI)+360)%360;
+}
+window.addEventListener('load',initMap);
+</script>
+</body>
+</html>
